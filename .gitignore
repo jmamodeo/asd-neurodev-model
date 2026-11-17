@@ -1,0 +1,17 @@
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Downloaded data and generated output
+.cache/
+image_set/**/*
+!image_set/README.md
+results/*
+!results/.gitkeep
