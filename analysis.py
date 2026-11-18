@@ -184,6 +184,76 @@ def figure_auc_interaction(df, stat, path, title):
     fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
 
 
+def figure_sessions_to_criterion(df, sessions, path, title):
+    """Cumulative fraction of networks whose training loss has reached the chance-level loss (ln 4) by each session."""
+    datas = sorted(df.data.unique())
+    fig, axs = plt.subplots(1, len(datas), figsize=(5.6 * len(datas), 4.4), squeeze=False, sharey=True)
+    for j, data in enumerate(datas):
+        ax = axs[0, j]
+        for c in CONDS:
+            t = df[(df.data == data) & (df.cond == c)].ept_abs.values            # 1-based session; one past the end = never reached
+            x = np.arange(0, sessions + 1)
+            y = np.array([(t <= k).mean() for k in x])
+            med = np.median(t)
+            lab = f"{LABEL[c]} (median {med:g})" if med <= sessions else f"{LABEL[c]} (median not reached)"
+            ax.step(x, y, where="post", color=COLOR[c], lw=2, label=lab)
+        ax.set_xlabel("training session"); ax.set_title(DATA_LABEL.get(data, data))
+        ax.set_ylim(-0.02, 1.02); ax.legend(fontsize=8, loc="lower right", title="median sessions to reach", title_fontsize=8)
+        if j == 0:
+            ax.set_ylabel("fraction of networks with training loss below ln 4")
+    n = int(df.groupby(["data", "cond"]).size().min())
+    fig.suptitle(f"{title}\nChance-level loss (ln 4 = {LN4:.2f}) reached, n = {n} networks per condition")
+    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+
+
+def _matched_arrays(d, y):
+    """Per-condition arrays of outcome y over the seeds present in all four conditions (seed-matched)."""
+    seeds = sorted(set.intersection(*[set(d[d.cond == c].seed) for c in CONDS]))
+    return {c: d[d.cond == c].set_index("seed").loc[seeds, y].values.astype(float) for c in CONDS}
+
+
+def observed_vs_additive(d, y, n_boot=10000, seed=0):
+    """Means with 95% bootstrap CIs (resampling seeds, the same seeds in all four conditions) for the four conditions,
+    the additive prediction CCL5 + Wnt - control, and the interaction contrast both - additive."""
+    A = _matched_arrays(d, y); n = len(A["control"])
+    rng = np.random.default_rng(seed); idx = rng.integers(0, n, size=(n_boot, n))
+    def est(a):
+        return {"control": a["control"], "ccl5": a["ccl5"], "wnt": a["wnt"], "both": a["both"],
+                "additive": a["ccl5"] + a["wnt"] - a["control"], "interaction": a["both"] - (a["ccl5"] + a["wnt"] - a["control"])}
+    point = {k: float(v.mean()) for k, v in est(A).items()}
+    B = est({c: A[c][idx] for c in CONDS})           # arrays of shape (n_boot, n)
+    out = {}
+    for k, v in B.items():
+        m = v.mean(1); out[k] = (point[k], float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5)))
+    return out
+
+
+def figure_observed_vs_additive(df, stat, path, title):
+    datas = sorted(df.data.unique())
+    outcomes = (("auc", "AUC (mean training loss)"), ("final_loss", "final training loss"))
+    fig, axs = plt.subplots(len(outcomes), len(datas), figsize=(5.8 * len(datas), 3.9 * len(outcomes)), squeeze=False)
+    cats = ["control", "ccl5", "wnt", "both", "additive"]
+    names = ["Control", "CCL5", "Wnt", "Wnt + CCL5\n(observed)", "Additive\nprediction"]
+    for i, (y, yl) in enumerate(outcomes):
+        for j, data in enumerate(datas):
+            ax = axs[i, j]; E = observed_vs_additive(df[df.data == data], y)
+            for k, c in enumerate(cats):
+                m, lo, hi = E[c]
+                if c == "additive":
+                    ax.errorbar(k, m, yerr=[[m - lo], [hi - m]], fmt="D", mfc="white", mec="k", color="k", capsize=4, ms=8, lw=1.5)
+                else:
+                    ax.errorbar(k, m, yerr=[[m - lo], [hi - m]], fmt="o", color=COLOR[c], capsize=4, ms=8, lw=1.5)
+            ax.axhline(E["additive"][0], color="gray", lw=.8, ls=":")
+            ax.set_xticks(range(len(cats))); ax.set_xticklabels(names, fontsize=8.5); ax.set_ylabel(yl)
+            ax.set_xlim(-0.5, len(cats) - 0.5)
+            ia, il, ih = E["interaction"]; p = stat[data]["anova"][y]["Wnt x CCL5"]["p"]
+            ax.set_title(f"{DATA_LABEL.get(data, data)}", fontsize=10)
+            ax.text(0.03, 0.97, f"observed − additive = {ia:+.2f} [{il:+.2f}, {ih:+.2f}]\nWnt × CCL5 interaction (ANOVA) p = {p:.2g}",
+                    transform=ax.transAxes, ha="left", va="top", fontsize=8.5)
+    fig.suptitle(f"{title}\nMeans with 95% bootstrap CIs over seeds (seed-matched); additive prediction = CCL5 + Wnt − control")
+    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+
+
 def figure_summary(df, path, title):
     datas = sorted(df.data.unique()); rng = np.random.default_rng(1)
     metrics = (("final_loss", "final training loss (last 10 sessions)", None),
@@ -219,7 +289,7 @@ def markdown_tables(stat):
     return "\n".join(lines) + "\n"
 
 
-FIGURE_KINDS = ("loss_curves", "auc_interaction", "summary")
+FIGURE_KINDS = ("loss_curves", "sessions_to_criterion", "auc_interaction", "observed_vs_additive", "summary")
 
 
 def make_figure(kind, runs, tag, fig_dir, title):
@@ -231,6 +301,11 @@ def make_figure(kind, runs, tag, fig_dir, title):
     elif kind == "auc_interaction":
         df = per_run_table(runs)
         figure_auc_interaction(df, compute_statistics(df), path, title)
+    elif kind == "sessions_to_criterion":
+        figure_sessions_to_criterion(per_run_table(runs), len(runs[0]["train_loss"]), path, title)
+    elif kind == "observed_vs_additive":
+        df = per_run_table(runs)
+        figure_observed_vs_additive(df, compute_statistics(df), path, title)
     elif kind == "summary":
         figure_summary(per_run_table(runs), path, title)
     else:
@@ -256,5 +331,7 @@ def analyze(runs, tag, fig_dir, table_dir, title):
     os.makedirs(fig_dir, exist_ok=True)
     figure_loss_curves(runs, os.path.join(fig_dir, f"loss_curves_{tag}.png"), title)
     figure_auc_interaction(df, stat, os.path.join(fig_dir, f"auc_interaction_{tag}.png"), title)
+    figure_sessions_to_criterion(df, len(runs[0]["train_loss"]), os.path.join(fig_dir, f"sessions_to_criterion_{tag}.png"), title)
+    figure_observed_vs_additive(df, stat, os.path.join(fig_dir, f"observed_vs_additive_{tag}.png"), title)
     figure_summary(df, os.path.join(fig_dir, f"summary_{tag}.png"), title)
     return stat

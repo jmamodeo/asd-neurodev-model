@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Figure 2: area under the training-loss curve, Wnt x CCL5 interaction plot, learning rate 0.03 (figures/auc_interaction_lr0.03.png).
+"""Figure 2: release-map (synaptic gain) distributions, control vs CCL5 (figures/release_map_distributions.png).
 
-Runs only the training runs this output needs (shared cache: run_cache/ and the shipped reproduce_data/), then plots.
+Needs no training runs.
 Options: --quick, --retrain, --workers N, --seeds N, --sessions N, --original-images DIR (see `python reproduce.py --help`).
 
-    python scripts/figures/fig2_auc_interaction.py
+    python scripts/figures/fig2_release_map_distributions.py
 """
 import os
 import sys

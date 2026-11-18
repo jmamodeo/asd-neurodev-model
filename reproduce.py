@@ -11,12 +11,12 @@ What it does
   2. Missing runs are trained (CIFAR-10 is downloaded automatically with scripts/fetch_cifar10.py), in parallel (--workers).
   3. Statistics, tables and figures are written to figures/ and tables/.
 
-Individual figures: scripts/figures/fig1_loss_curves.py, fig2_auc_interaction.py, fig3_summary.py, figS1_loss_curves_lr0.1.py,
-figS2_auc_interaction_lr0.1.py, figS3_summary_lr0.1.py and tables.py each build just that figure (training only the runs it needs,
-sharing the run cache); the same is available here as  python reproduce.py --only fig1 fig2 ...
+Individual figures: scripts/figures/fig1_model_schematic.py ... fig7_summary.py, figS1_..., figS2_..., figS3_... and tables.py each
+build just that figure (training only the runs it needs, sharing the run cache); the same is available here as
+python reproduce.py --only fig3 fig4 ...  (fig1 and fig2 need no training runs).
 
 Useful options
-  --only NAME [NAME ...]   build only these outputs: fig1 fig2 fig3 figS1 figS2 figS3 tables (default: everything)
+  --only NAME [NAME ...]   build only these outputs: fig1 ... fig7 figS1 figS2 figS3 tables (default: everything)
   --retrain                ignore the distributed cache and retrain everything from scratch (hours; see README)
   --quick                  smoke test: 3 seeds, 20 sessions, CIFAR-10 only, outputs in figures_quick/ and tables_quick/
   --workers N              parallel training processes (default: number of CPU cores)
@@ -44,6 +44,7 @@ sys.path.insert(0, ROOT)
 
 import experiment as ex          # noqa: E402
 import analysis as an            # noqa: E402
+import figures_model as fm       # noqa: E402
 
 CACHE = os.path.join(ROOT, "run_cache")
 BUNDLES = os.path.join(ROOT, "reproduce_data")
@@ -96,8 +97,10 @@ def collect_runs(run_dir, datasets, seeds, sessions, lr):
     return runs
 
 
-FIGURES = {   # name: (learning rate, figure kind); file written is figures/<kind>_lr<lr>.png
-    "fig1": (0.03, "loss_curves"), "fig2": (0.03, "auc_interaction"), "fig3": (0.03, "summary"),
+FIGURES = {   # name: (learning rate or None, kind); the file written is figures/<kind>_lr<lr>.png (figures/<kind>.png without runs)
+    "fig1": (None, "model_schematic"), "fig2": (None, "release_map_distributions"),
+    "fig3": (0.03, "loss_curves"), "fig4": (0.03, "sessions_to_criterion"), "fig5": (0.03, "auc_interaction"),
+    "fig6": (0.03, "observed_vs_additive"), "fig7": (0.03, "summary"),
     "figS1": (0.1, "loss_curves"), "figS2": (0.1, "auc_interaction"), "figS3": (0.1, "summary"),
 }
 ALL_OUTPUTS = list(FIGURES) + ["tables"]
@@ -156,7 +159,7 @@ def main(argv=None, only=None):
     fig_dir = os.path.join(ROOT, "figures_quick" if opts.quick else "figures")
     tab_dir = os.path.join(ROOT, "tables_quick" if opts.quick else "tables")
     t_start = time.time()
-    lrs = sorted({FIGURES[w][0] for w in wanted if w in FIGURES} | ({0.03, 0.1} if "tables" in wanted else set()), reverse=True)
+    lrs = sorted({FIGURES[w][0] for w in wanted if w in FIGURES and FIGURES[w][0] is not None} | ({0.03, 0.1} if "tables" in wanted else set()), reverse=True)
     runs_by_lr = {lr: get_runs(lr, opts) for lr in lrs}       # only the configurations the requested outputs need
     for name in wanted:
         if name == "tables":
@@ -165,6 +168,12 @@ def main(argv=None, only=None):
                 print(f"[tables] {tag_for(lr, opts.quick)} -> {os.path.relpath(tab_dir, ROOT)}/", flush=True)
             continue
         lr, kind = FIGURES[name]
+        if lr is None:                                       # model figures: no training runs needed
+            os.makedirs(fig_dir, exist_ok=True)
+            path = os.path.join(fig_dir, f"{kind}.png")
+            {"model_schematic": fm.figure_model_schematic, "release_map_distributions": fm.figure_release_maps}[kind](path)
+            print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
+            continue
         title = f"{CONFIG_NAME.get(lr, f'lr {lr:g}')}"
         path = an.make_figure(kind, runs_by_lr[lr], tag_for(lr, opts.quick), fig_dir, title)
         print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
