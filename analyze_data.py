@@ -5,6 +5,8 @@ import pandas as pd
 import os
 import datetime
 
+SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split('.')[:2]) >= (0, 13)
+
 
 # Below are functions for analyzing and plotting neural network data
 
@@ -26,8 +28,14 @@ def plot_loss_over_time(loss_over_time_list, session_list):
     session_list
     """
 
+    # seaborn 0.13+ replaced 'scale' and 'errwidth' with Line2D keywords and err_kws, and markers must be a
+    # single style (not a list) when there is no hue; the older keywords are kept for the pinned seaborn 0.12
+    if SEABORN_0_13_OR_NEWER:
+        style = dict(markersize=8, linewidth=2.3, err_kws={'linewidth': 1.75})
+    else:
+        style = dict(scale=0.85, errwidth=1.75)
     sns.pointplot(x=session_list, y=loss_over_time_list, estimator='mean', errorbar=('ci', 95),
-                  markers=['o', 's', 'D'], scale=0.85, linestyles='--', errwidth=1.75, capsize=0.15)
+                  markers='o', linestyles='--', capsize=0.15, **style)
     plt.xlabel('Session', fontsize=12)
     plt.ylabel('Mean Loss', fontsize=12)
 
@@ -47,10 +55,7 @@ def plot_loss_over_time(loss_over_time_list, session_list):
 
     parent_dir = os.getcwd() + "/results/"
     child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
-    try:
-        os.mkdir(parent_dir + child_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(parent_dir + child_dir, exist_ok=True)  # also creates 'results' if it is missing
     file_name = "/training_loss_plot.png"
     plt.savefig(parent_dir + "/" + child_dir + file_name, dpi=300, bbox_inches='tight')
 
@@ -75,13 +80,10 @@ def export_loss_table(loss_table_list, session_list):
     """
 
     loss_dfs = [pd.DataFrame(x) for x in loss_table_list]
-    final_df = pd.concat(loss_dfs, keys=set(session_list))
+    final_df = pd.concat(loss_dfs, keys=sorted(set(session_list)))
 
     parent_dir = os.getcwd() + "/results/"
     child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
-    try:
-        os.mkdir(parent_dir + child_dir)
-    except FileExistsError:
-        pass
+    os.makedirs(parent_dir + child_dir, exist_ok=True)  # also creates 'results' if it is missing
     file_name = "/training_loss_table.xlsx"
     final_df.to_excel(parent_dir + child_dir + file_name, sheet_name="Loss per Class per Session")
