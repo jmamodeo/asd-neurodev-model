@@ -26,7 +26,9 @@ def download(cache):
         print(f"Using cached {archive}")
     else:
         print(f"Downloading {URL} (about 163 MB)")
-        urllib.request.urlretrieve(URL, archive)
+        part = archive.with_name(archive.name + ".part")   # download to a temp name so an interrupted download is never reused
+        urllib.request.urlretrieve(URL, part)
+        part.replace(archive)
     return archive
 
 
