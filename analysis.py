@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 PAGE_WIDTH = 6.5
 plt.rcParams.update({"font.size": 8.5, "axes.titlesize": 9, "axes.labelsize": 8.5, "xtick.labelsize": 8, "ytick.labelsize": 8,
                      "legend.fontsize": 8, "legend.title_fontsize": 8, "figure.titlesize": 9, "lines.linewidth": 1.4})
-FIG_HEIGHT = {"loss_curves": 5.6, "sessions_to_criterion": 3.0, "observed_vs_additive": 5.2, "summary": 4.8}   # inches
+FIG_HEIGHT = {"loss_curves": 4.2, "sessions_to_criterion": 3.4, "observed_vs_additive": 6.0, "summary": 4.4}   # inches
+FIG_HEIGHT_SUPP = {"loss_curves": 4.8}   # supplementary (learning rate 0.1) figures that differ in height from the main text
 
 CONDS = ["control", "ccl5", "wnt", "both"]
 LABEL = {"control": "Control", "ccl5": "CCL5", "wnt": "Wnt", "both": "Wnt + CCL5"}

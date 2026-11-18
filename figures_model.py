@@ -28,7 +28,7 @@ def layer_sizes(wnt_delta):
     return sizes + [CLASSES]
 
 
-FIG_HEIGHT = {"model_schematic": 3.7, "release_map_distributions": 3.0}   # inches
+FIG_HEIGHT = {"model_schematic": 4.3, "release_map_distributions": 3.9}   # inches
 
 
 def figure_model_schematic(path, height=None):
