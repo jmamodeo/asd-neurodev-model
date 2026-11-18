@@ -108,7 +108,7 @@ def test_reproduce_has_one_command_line_without_only_or_abbreviations():
 def test_one_way_to_run_each_task():
     """The only entry points are the root `main.py`, the root `reproduce.py` and the per-figure scripts."""
     assert (ROOT_PATH / "main.py").is_file() and (ROOT_PATH / "reproduce.py").is_file()
-    for removed in ("Makefile", "reproduce.sh", "requirements.txt", "src/asd_model/__main__.py"):
+    for removed in ("Makefile", "reproduce.sh", "src/asd_model/__main__.py"):
         assert not (ROOT_PATH / removed).exists(), removed
     assert "[project.scripts]" not in (ROOT_PATH / "pyproject.toml").read_text()
     assert "__main__" not in inspect.getsource(reproduce)

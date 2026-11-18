@@ -1,6 +1,6 @@
 [project]
 name = "asd-neurodev-model"
-dynamic = ["version"]
+dynamic = ["version", "dependencies"]
 description = "Python neural-network model of how elevated Wnt/mTOR-CCL5 signaling in autism spectrum disorder could slow learning in a visual image-classification network."
 readme = "README.md"
 license = "MIT"
@@ -12,19 +12,8 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-# Python 3.11 is the version used in the paper; 3.12 also passes the tests with these pinned versions.
+# Python 3.11 is the version used in the paper; 3.12 also passes the tests with the pinned versions in requirements.txt.
 requires-python = ">=3.11,<3.13"
-# Pinned to the versions verified to run the model and reproduce.py (this file is the single source for the pins).
-dependencies = [
-    "opencv-python==4.8.1.78",
-    "numpy==1.26.4",
-    "pandas==2.1.4",
-    "seaborn==0.12.2",
-    "matplotlib==3.8.2",
-    "openpyxl==3.1.2",
-    "scipy==1.11.4",
-    "statsmodels==0.14.1",
-]
 
 [project.optional-dependencies]
 test = ["pytest==8.0.2"]
@@ -46,6 +35,7 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = { attr = "asd_model.__version__" }  # CITATION.cff and the git tag must match (tests/test_metadata.py)
+dependencies = { file = ["requirements.txt"] }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

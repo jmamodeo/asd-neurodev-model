@@ -36,7 +36,7 @@ The paper uses visual processing as a base to examine the effect of both protein
 
 ## Usage
 
-There is one way to do each task. Run every command from the repository root, in a virtual environment (Python 3.11; 3.12 also works with the pinned versions).
+There is one way to do each task. Run every command from the repository root, in a virtual environment (Python 3.11; 3.12 also works with the pinned versions). The runtime pins live in `requirements.txt`; `pyproject.toml` reads them, so `pip install -e .[test]` is the one install command (not a separate `pip install -r requirements.txt` route).
 
 ```bash
 git clone https://github.com/jmamodeo/asd-neurodev-model.git
@@ -101,7 +101,8 @@ figures/, tables/       Generated figures and tables (committed)
 docs/paper/             Paper (PDF and Markdown source), analysis plan, references, PDF build script
 docs/methods_to_code.md Which function implements which step of the paper's Methods
 tests/                  pytest tests (conftest.py has the fixture that writes random test images)
-pyproject.toml          Package metadata, pinned dependencies, ruff settings
+requirements.txt        Pinned runtime dependencies (read by pyproject.toml)
+pyproject.toml          Package metadata, ruff settings
 image_set/, results/    Empty folders for your images and for main.py output
 ```
 
@@ -109,7 +110,7 @@ image_set/, results/    Empty folders for your images and for main.py output
 
 Python 3.11 is the version used in the paper. The pinned package versions were verified to run `main.py` and `reproduce.py` end to end on Python 3.11 (the tests also pass on 3.12). Current seaborn and pandas releases also run `main.py`, but the pinned versions are the ones the paper's results were produced with.
 
-Install the package in editable mode from the repository root. This puts `asd_model` on the import path and installs the pinned dependencies (`pyproject.toml` is the single source of the pinned versions):
+Install the package in editable mode from the repository root. This puts `asd_model` on the import path and installs the pinned dependencies (the runtime pins live in `requirements.txt`, which `pyproject.toml` reads):
 
 ```bash
 python3.11 -m venv venv
