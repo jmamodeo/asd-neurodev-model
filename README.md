@@ -157,7 +157,7 @@ Settings edited inside `src/asd_model/main.py`:
 | Parameter | Default | Meaning |
 |---|---|---|
 | `image_vector_size` | 400 | Input layer size (image vector length; a square number, since images are resized to a square) |
-| `class_list` | `['trucks', 'dogs', 'cats', 'cars']` | Image classes; must match folder names |
+| `class_list` | `["trucks", "dogs", "cats", "cars"]` | Image classes; must match folder names |
 | `hidden_layer_number` | 4 | Number of hidden layers |
 | `ccl5_delta` | 0 (`--ccl5-delta`) | Fold difference in CCL5 relative to normal (e.g., 0.4 for 1.4 fold) |
 | `wnt_delta` | 0 (`--wnt-delta`) | Fold difference in Wnt relative to normal |
