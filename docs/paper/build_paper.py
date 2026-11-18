@@ -70,7 +70,8 @@ def resolve(m):
 
 def table(name, S):
     out = []
-    for data, R in S.items():
+    for data in [d for d in ('original', 'cifar3') if d in S]:
+        R = S[data]
         if name == "summary":
             out += [f"<p class='tcap'><b>{DATA[data]}</b> (n = {R['n_per_cond']['control']} seeds per condition)</p>",
                     "<table><tr><th>Condition</th><th>Session-1 loss</th><th>Final loss (sessions 91–100)</th><th>AUC (mean loss over sessions)</th>"
