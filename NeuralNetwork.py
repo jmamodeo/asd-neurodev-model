@@ -94,7 +94,12 @@ class NeuralNetwork:
         # Initializing layer modulation
         self.ccl5_delta = ccl5_delta
 
-    def feedforward(self, image_vector, use_release_maps):
+        # Release-map sampler (replaceable by an external harness) and the last forward-pass state
+        self.release_map_fn = get_release_maps
+        self.last_release_maps = None
+        self.last_effective_weights = None
+
+    def feedforward(self, image_vector, use_release_maps=True):
         """
         This function passes the pixel values of the image vector (input layer) through
         the hidden layers to the output layer, with the inputs from one layer to the next
@@ -109,6 +114,14 @@ class NeuralNetwork:
         weighting vs fixed weighting of synaptic inputs (see network_tuning.py) can be
         turned on/off by setting 'use_release_maps' to True/False.
 
+        FIX 2: the output layer now really uses softmax (the original condition compared the layer
+        index to len(self.layer_weights), which never fires, so the output used a sigmoid).
+
+        FIX 3: the release maps sampled here are stored in 'self.last_release_maps' (one per weight
+        matrix) and the effective weights E = W * M in 'self.last_effective_weights', so that
+        feedback() can backpropagate through exactly the weights used in the forward pass. If
+        'use_release_maps' is False, M is all ones. Maps are cast to the weight dtype.
+
         Parameters
         ----------
         image_vector
@@ -119,18 +132,24 @@ class NeuralNetwork:
         layer_activities
         """
 
-        # Creating maps of release probabilities
-        release_maps = get_release_maps(self.layer_weights, self.ccl5_delta)
+        # FIX 3: keep the sampled release maps (and effective weights) so backprop uses the same
+        # weights as the forward pass; the original discarded them and backpropagated through plain W.
+        if use_release_maps:
+            sampled_maps = self.release_map_fn(self.layer_weights, self.ccl5_delta)
+            release_maps = [np.asarray(m, dtype=w.dtype) for m, w in zip(sampled_maps, self.layer_weights)]
+        else:
+            release_maps = [np.ones_like(w) for w in self.layer_weights]
+        effective_weights = [w * m for w, m in zip(self.layer_weights, release_maps)]
+        self.last_release_maps = release_maps
+        self.last_effective_weights = effective_weights
 
         # Calculating layer activities
         layer_activities = [image_vector]
         for layer in range(len(self.layer_weights)):
-            if use_release_maps:
-                weights = self.layer_weights[layer] * release_maps[layer]
-            else:
-                weights = self.layer_weights[layer]
-            layer_activity = np.dot(weights, layer_activities[-1]) + self.layer_biases[layer]
-            if layer == len(self.layer_weights):
+            layer_activity = np.dot(effective_weights[layer], layer_activities[-1]) + self.layer_biases[layer]
+            # FIX 2: the original test `layer == len(self.layer_weights)` never fires (layer index
+            # stops at len - 1), so the output layer got a sigmoid instead of the documented softmax.
+            if layer == len(self.layer_weights) - 1:
                 normalized_activity = apply_softmax(layer_activity)
             else:
                 normalized_activity = apply_sigmoid(layer_activity)
@@ -138,7 +157,7 @@ class NeuralNetwork:
 
         return layer_activities
 
-    def feedback(self, encoded_label, layer_activities, learn_r):
+    def feedback(self, encoded_label, layer_activities, learn_r, release_maps=None, max_gradient_norm=1.0):
         """
         This function updates the weights and biases for connections between layers of the
         network based on the differences between image class probabilities held by nodes in
@@ -169,10 +188,19 @@ class NeuralNetwork:
         the layer delta values by the learning rate (to scale them), then subtracting the existing layer
         biases matrix by the scaled layer delta matrix.
 
+        FIX 3: backpropagation goes through the EFFECTIVE weights E = W * M used in the forward pass
+        (M = release maps, 'release_maps' argument or 'self.last_release_maps' if None): the delta of the
+        previous layer is (E.T @ delta) * a * (1 - a), and the weight gradient is (delta @ a_prev.T) * M
+        (chain rule through W * M). Bias gradients are unchanged. 'max_gradient_norm' (default 1.0) is
+        the global clipping threshold.
+
+        FIX 2: the output layer is a softmax, so output_delta = p - label is exactly the gradient of the
+        cross-entropy loss with respect to the output pre-activations.
+
         Cross-entropy loss (difference) of neural network output layer activity vs encoded image label
         is calculated by taking the natural log of node values (the smaller the numerical input, the
         larger the negative numerical output), which is the inverse of Euler's number**node value,
-        applied to layer activities via the Sigmoid function during feedforward(). The loss matrix,
+        applied to layer activities via the Softmax function during feedforward(). The loss matrix,
         equal in size to the output layer, is multiplied by the encoded image label to zero out
         values at all nodes representing incorrect image classes and preserving the value at the node
         representing the correct/true image class. This matrix is summed and converted to a positive
@@ -183,11 +211,20 @@ class NeuralNetwork:
         encoded_label
         layer_activities
         learn_r
+        release_maps
+        max_gradient_norm
 
         Returns
         -------
         loss
         """
+
+        # FIX 3: use the maps from the forward pass
+        if release_maps is None:
+            release_maps = self.last_release_maps
+        if release_maps is None:
+            release_maps = [np.ones_like(w) for w in self.layer_weights]
+        effective_weights = [w * m for w, m in zip(self.layer_weights, release_maps)]
 
         # Calculating differences in output matrix vs label matrix
         output_delta = layer_activities[-1] - encoded_label
@@ -196,31 +233,64 @@ class NeuralNetwork:
         loss = -np.sum(encoded_label * np.log(layer_activities[-1] + 1e-10))
 
         # Backpropagation of differences in output matrix vs label matrix
+        # FIX 3: propagate through effective weights E = W * M (the original used plain W)
+        # and use 1 - a (no float64 np.ones temporary that would upcast float32 activities).
         layer_deltas = [output_delta]
         for layer in range(len(self.layer_weights) - 1):
             back_layer = -1 * (layer + 1)
-            delta = np.dot(self.layer_weights[back_layer].T, layer_deltas[-1])
-            minuend = np.ones(self.layer_sizes[back_layer - 1]).reshape(-1, 1)
-            layer_delta = delta * (layer_activities[back_layer - 1] * (minuend - layer_activities[back_layer - 1]))
+            delta = np.dot(effective_weights[back_layer].T, layer_deltas[-1])
+            activity = layer_activities[back_layer - 1]
+            layer_delta = delta * (activity * (1 - activity))
             layer_deltas.append(layer_delta)
 
         # Clipping gradients to reduce exploding or vanishing weights
-        max_gradient_norm = 1.0
         all_gradients = np.concatenate([delta.flatten() for delta in layer_deltas])
         gradient_norm = np.linalg.norm(all_gradients)
 
         if gradient_norm > max_gradient_norm:
             clipping_factor = max_gradient_norm / gradient_norm
             for index in range(len(layer_deltas)):
-                layer_deltas[index] *= clipping_factor
+                layer_deltas[index] = layer_deltas[index] * clipping_factor
 
         # Updating layer weights, biases
         for layer in range(len(self.layer_weights)):
             back_layer = -1 * (layer + 1)
-            self.layer_weights[back_layer] -= learn_r * np.dot(layer_deltas[layer], layer_activities[back_layer - 1].T)
+            # FIX 3: chain rule through W * M gives dL/dW = (delta @ a_prev.T) * M
+            weight_gradient = np.dot(layer_deltas[layer], layer_activities[back_layer - 1].T) * release_maps[back_layer]
+            self.layer_weights[back_layer] -= learn_r * weight_gradient
             self.layer_biases[back_layer] -= learn_r * layer_deltas[layer]
 
         return loss
+
+    def run_session(self, training_image_dict, encoded_label_dict, learn_r):
+        """
+        This function runs one training session: one pass over every training image, in a freshly
+        shuffled order, with a forward pass (release maps on) and a weight update per image.
+
+        FIX 5: the original iterated class by class (all images of one class, then the next), so each
+        session ended on a single class and updates were class-blocked. Here the (image class, image
+        vector) pairs of all classes are pooled and shuffled with np.random.permutation.
+
+        Returns
+        -------
+        losses (per example, in presentation order), class_names (in presentation order)
+        """
+
+        # FIX 5: shuffled presentation order across all classes instead of class blocks
+        examples = [(image_class, image_vector)
+                    for image_class, image_list in training_image_dict.items()
+                    for image_vector in image_list]
+
+        losses = []
+        class_names = []
+        for index in np.random.permutation(len(examples)):
+            image_class, image_vector = examples[index]
+            layer_activities = self.feedforward(image_vector, use_release_maps=True)
+            loss = self.feedback(encoded_label_dict[image_class], layer_activities, learn_r)
+            losses.append(loss)
+            class_names.append(image_class)
+
+        return losses, class_names
 
     def train(self, training_image_dict, encoded_label_dict, learn_r, sessions):
         """
@@ -244,6 +314,10 @@ class NeuralNetwork:
         returned for each image is added to a total loss, with which the average loss for each
         session is calculated and printed, along with the session number.
 
+        FIX 4/5: each session is one shuffled pass over all images (run_session()), and the printed
+        session loss is the mean loss per training example (total loss / number of training images;
+        the original divided by the number of classes).
+
         Loss values for each session are also stored in a list with its corresponding session number
         stored in a sessions number list. The loss over time list is used in conjunction with the
         list of session numbers to plot mean loss over sessions with plot_loss_over_time(),see
@@ -263,39 +337,58 @@ class NeuralNetwork:
         sessions
         """
 
+        number_of_images = sum(len(image_list) for image_list in training_image_dict.values())
+
         loss_over_time = []
         loss_table_list = []
         session_list = []
         for session in range(sessions):
-            total_loss = 0
+            losses, class_names = self.run_session(training_image_dict, encoded_label_dict, learn_r)
+            total_loss = sum(losses)
 
-            loss_table = {}
-            for image_class in training_image_dict.keys():
-                image_list = training_image_dict[image_class]
-                encoded_label = encoded_label_dict[image_class]
-
-                class_losses = []
-                for image_vector in image_list:
-                    layer_activities = self.feedforward(image_vector, use_release_maps=True)
-                    loss = self.feedback(encoded_label, layer_activities, learn_r)
-                    total_loss += loss
-
-                    loss_over_time.append(loss)
-                    class_losses.append(loss)
-                    session_list.append(session + 1)
-
-                loss_table[image_class] = class_losses
-
+            loss_table = {image_class: [] for image_class in training_image_dict.keys()}
+            for loss, image_class in zip(losses, class_names):
+                loss_table[image_class].append(loss)
             loss_table_list.append(loss_table)
 
-            avg_loss = total_loss / len(training_image_dict.values())
+            loss_over_time.extend(losses)
+            session_list.extend([session + 1] * len(losses))
+
+            # FIX 4: mean loss per training example (the original divided by the number of classes)
+            avg_loss = total_loss / number_of_images
             print(f"Session: {session + 1} of {sessions}, Loss: {avg_loss:.4f}")
 
         print("Training complete")
         plot_loss_over_time(loss_over_time, session_list)
         export_loss_table(loss_table_list, session_list)
 
-    def test(self, test_image_dict, encoded_label_dict, use_release_maps):
+    def evaluate(self, image_dict, encoded_label_dict, use_release_maps=True):
+        """
+        This function measures performance without updating any weights or biases. It returns the
+        mean cross-entropy loss per example (-sum(label * log(output + 1e-10)), the same definition
+        used in feedback()) and the accuracy percentage (argmax of the output layer vs argmax of
+        the encoded label).
+
+        Returns
+        -------
+        mean_loss_per_example, accuracy_percent
+        """
+
+        total_loss = 0.0
+        num_correct = 0
+        num_images = 0
+        for image_class, image_list in image_dict.items():
+            encoded_label = encoded_label_dict[image_class]
+            label = int(np.argmax(encoded_label))
+            for image_vector in image_list:
+                output = self.feedforward(image_vector, use_release_maps)[-1]
+                total_loss += -np.sum(encoded_label * np.log(output + 1e-10))
+                num_correct += int(int(np.argmax(output)) == label)
+                num_images += 1
+
+        return total_loss / num_images, (num_correct / num_images) * 100
+
+    def test(self, test_image_dict, encoded_label_dict, use_release_maps=True):
         """
         This function tests the neural network on classifying new image (distinct for those in the
         training image set) according to the image classes the network learned in training.
@@ -303,26 +396,35 @@ class NeuralNetwork:
         It takes a dictionary of image class name (key)-list of image vectors (value) pairs curated
         for testing. Each image class key and its paired list of image vectors is pulled out and the
         image vectors are individually passed into feedforward(), see above, and a list of layer
-        activities is returned. The output layer matrix is converted to a matrix of equal size in which
-        every cell contains the index (number) of the node with the highest activity value/image class
-        probability.
+        activities is returned. The index of the node with the highest activity value/image class
+        probability in the OUTPUT layer is the network's prediction.
+
+        FIX 1: the original took the argmax of layer_activities[0] (the input image, not the network
+        output) and compared with `.all() == .all()`, so accuracy did not reflect the network. The
+        prediction is now int(argmax(layer_activities[-1])), compared with plain == to
+        int(argmax(encoded_label)). The accuracy percentage is printed and also returned.
+
+        FIX 3: 'use_release_maps' now defaults to True so testing uses the same release-map
+        distribution as training.
 
         This function takes an encoded label dictionary with image class name(key)-encoded class label
         pairs. The current image class is given as the key to this dictionary to get the encoded
-        label for the image class. The encoded image label is also converted to a matrix of equal size
-        in which every cell contains the index of the node with 1 (all other nodes/cells of the encoded
-        label are 0).
+        label for the image class.
 
-        The converted output layer activity and the converted encoded image label are directly compared.
-        If they match, the trial is considered correct and a 1 is added to the total correct trial count.
-        After all images have been tested, the total correct trial count is divided by the total number
-        of images tested (times 100) to get a prediction accuracy percentage, which is then printed.
+        If the prediction and the label match, the trial is considered correct and a 1 is added to the
+        total correct trial count. After all images have been tested, the total correct trial count is
+        divided by the total number of images tested (times 100) to get a prediction accuracy
+        percentage, which is printed and returned.
 
         Parameters
         ----------
         test_image_dict
         encoded_label_dict
         use_release_maps
+
+        Returns
+        -------
+        accuracy
         """
 
         num_correct = 0
@@ -330,16 +432,18 @@ class NeuralNetwork:
         for image_class in test_image_dict.keys():
             image_list = test_image_dict[image_class]
             encoded_label = encoded_label_dict[image_class]
-            label = np.argmax(encoded_label)
+            # FIX 1: compare the argmax of the network output with the argmax of the label
+            label = int(np.argmax(encoded_label))
 
             for image_vector in image_list:
                 layer_activities = self.feedforward(image_vector, use_release_maps)
-                prediction = np.argmax(layer_activities[0])
+                prediction = int(np.argmax(layer_activities[-1]))
 
-                if prediction.all() == label.all():
+                if prediction == label:
                     num_correct += 1
 
         all_images = [len(x) for x in test_image_dict.values()]
         accuracy = (num_correct / sum(all_images)) * 100
 
         print(f"Test Accuracy: {accuracy:.2f}%")
+        return accuracy

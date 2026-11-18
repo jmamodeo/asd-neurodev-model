@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     # This is the command to test the neural network
     # You can set 'use_release_maps' to 'True'/'False' for biological dynamic weighting of signals or fixed weighting
-    # Note: Because fixed weighting is (by definition) less variable, it may lead to better performance
+    # Note: Release maps are on for both training and testing (same distribution); fixed weighting is less variable
     net.test(test_image_dict, encoded_label_dict, use_release_maps=True)
 
 
