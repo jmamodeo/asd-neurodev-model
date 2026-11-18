@@ -1,6 +1,6 @@
 [project]
 name = "asd-neurodev-model"
-version = "0.1.0"
+version = "1.0.0"
 description = "Python neural-network model of how elevated Wnt/mTOR-CCL5 signaling in autism spectrum disorder could slow learning in a visual image-classification network."
 readme = "README.md"
 license = { text = "MIT" }

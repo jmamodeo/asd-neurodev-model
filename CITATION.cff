@@ -2,6 +2,8 @@ cff-version: 1.2.0
 message: "If you use this code or the accompanying paper, please cite them as below."
 type: software
 title: "ASD Neurodevelopment Model"
+version: 1.0.0
+date-released: "2026-11-18"
 abstract: >-
   A Python neural-network model of how elevated Wnt and mTOR-activated CCL5
   signaling in autism spectrum disorder could slow learning in a visual
