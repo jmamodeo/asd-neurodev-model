@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 from matplotlib.ticker import MultipleLocator
 
-SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split('.')[:2]) >= (0, 13)
+SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split(".")[:2]) >= (0, 13)
 
 
 # Below are functions for analyzing and plotting neural network data
@@ -45,17 +45,17 @@ def plot_loss_over_time(loss_over_time_list, session_list, results_directory=Non
     # seaborn 0.13+ replaced 'scale' and 'errwidth' with Line2D keywords and err_kws, and markers must be a
     # single style (not a list) when there is no hue; the older keywords are kept for the pinned seaborn 0.12
     if SEABORN_0_13_OR_NEWER:
-        style = dict(markersize=8, linewidth=2.3, err_kws={'linewidth': 1.75})
+        style = dict(markersize=8, linewidth=2.3, err_kws={"linewidth": 1.75})
     else:
         style = dict(scale=0.85, errwidth=1.75)
-    sns.pointplot(x=session_list, y=loss_over_time_list, estimator='mean', errorbar=('ci', 95),
-                  markers='o', linestyles='--', capsize=0.15, **style)
-    plt.xlabel('Session', fontsize=12)
-    plt.ylabel('Mean Loss', fontsize=12)
+    sns.pointplot(x=session_list, y=loss_over_time_list, estimator="mean", errorbar=("ci", 95),
+                  markers="o", linestyles="--", capsize=0.15, **style)
+    plt.xlabel("Session", fontsize=12)
+    plt.ylabel("Mean Loss", fontsize=12)
 
     ax = plt.gca()
-    ax.spines['left'].set_linewidth(2)
-    ax.spines['bottom'].set_linewidth(2)
+    ax.spines["left"].set_linewidth(2)
+    ax.spines["bottom"].set_linewidth(2)
 
     x_ticks = MultipleLocator(9)
     ax.xaxis.set_major_locator(x_ticks)
@@ -70,7 +70,7 @@ def plot_loss_over_time(loss_over_time_list, session_list, results_directory=Non
     if results_directory is None:
         results_directory = make_results_directory()
     file_name = "/training_loss_plot.png"
-    plt.savefig(results_directory + file_name, dpi=300, bbox_inches='tight')
+    plt.savefig(results_directory + file_name, dpi=300, bbox_inches="tight")
 
 
 def export_loss_table(loss_table_list, session_list, results_directory=None):

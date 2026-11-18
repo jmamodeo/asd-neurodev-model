@@ -12,14 +12,14 @@ from asd_model.neural_network import (
 from asd_model.visual_input import encode_image_labels, image_to_matrix
 
 # Run from the repository root with: python -m asd_model   (or python main.py; options: --learning-rate (or --lr), --sessions, --wnt-delta, --ccl5-delta)
-if __name__ == '__main__':
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description='Train and test the ASD Wnt/CCL5 neural network model.')
-    parser.add_argument('--learning-rate', '--lr', type=float, default=DEFAULT_LEARNING_RATE,
-                        help='learning rate (default 0.03; 0.1 makes the network unstable, see the paper supplement)')
-    parser.add_argument('--sessions', type=int, default=DEFAULT_SESSIONS, help='training sessions (passes over the training set)')
-    parser.add_argument('--wnt-delta', type=float, default=0.0, help=f'fold change above normal, ASD = {ASD_WNT_DELTA}')
-    parser.add_argument('--ccl5-delta', type=float, default=0.0, help=f'fold change above normal, ASD = {ASD_CCL5_DELTA}')
+    parser = argparse.ArgumentParser(description="Train and test the ASD Wnt/CCL5 neural network model.")
+    parser.add_argument("--learning-rate", "--lr", type=float, default=DEFAULT_LEARNING_RATE,
+                        help="learning rate (default 0.03; 0.1 makes the network unstable, see the paper supplement)")
+    parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS, help="training sessions (passes over the training set)")
+    parser.add_argument("--wnt-delta", type=float, default=0.0, help=f"fold change above normal, ASD = {ASD_WNT_DELTA}")
+    parser.add_argument("--ccl5-delta", type=float, default=0.0, help=f"fold change above normal, ASD = {ASD_CCL5_DELTA}")
     args = parser.parse_args()
 
     # Number of units in the vector made from an image, effectively input layer
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # List of image class categories, names MUST match the names of folders holding the images in image directory
     # You can alter the list items to change the image classes on which the neural network is trained then tested
-    class_list = ['trucks', 'dogs', 'cats', 'cars']
+    class_list = ["trucks", "dogs", "cats", "cars"]
 
     # This is the path to the training image set for the local machine. UPDATE as needed
     train_image_directory = os.getcwd() + "/image_set/train_subset"
