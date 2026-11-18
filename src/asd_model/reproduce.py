@@ -46,8 +46,6 @@ CACHE = os.path.join(ROOT, "run_cache")
 BUNDLES = os.path.join(ROOT, "reproduce_data")
 CIFAR_DIR = os.path.join(ROOT, "image_set_cifar3")
 CONFIG_NAME = {0.03: "Learning rate 0.03", 0.1: "Learning rate 0.1 (supplementary)"}
-# figure file stem used in the paper for each configuration
-PAPER_FIGURES = {0.03: "lr0.03", 0.1: "lr0.1"}
 
 
 def tag_for(lr, quick):

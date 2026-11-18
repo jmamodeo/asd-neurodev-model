@@ -1,7 +1,7 @@
 import numpy as np
 
-from asd_model.network_tuning import *
-from asd_model.loss_outputs import *
+from asd_model.loss_outputs import export_loss_table, plot_loss_over_time
+from asd_model.network_tuning import apply_sigmoid, apply_softmax, get_release_maps
 
 # Default learning rate. A learning rate of 0.1 makes the N(0,1)-initialised network unstable (shuffled training,
 # softmax output, release map in backprop), so 0.03 is the default (selected from a control-only pilot, see
@@ -83,7 +83,7 @@ class NeuralNetwork:
 
         # Initializing layer sizes
         self.layer_sizes = [image_vector_size]
-        for layer in range(hidden_layer_number):
+        for _ in range(hidden_layer_number):
             additional_nodes = int(self.layer_sizes[-1] * wnt_delta)
             layer_size = self.layer_sizes[-1] + additional_nodes
             self.layer_sizes.append(layer_size)
@@ -357,7 +357,7 @@ class NeuralNetwork:
             losses, class_names = self.run_session(training_image_dict, encoded_label_dict, learn_r)
             total_loss = sum(losses)
 
-            loss_table = {image_class: [] for image_class in training_image_dict.keys()}
+            loss_table = {image_class: [] for image_class in training_image_dict}
             for loss, image_class in zip(losses, class_names):
                 loss_table[image_class].append(loss)
             loss_table_list.append(loss_table)
@@ -439,8 +439,7 @@ class NeuralNetwork:
 
         num_correct = 0
 
-        for image_class in test_image_dict.keys():
-            image_list = test_image_dict[image_class]
+        for image_class, image_list in test_image_dict.items():
             encoded_label = encoded_label_dict[image_class]
             # Compare the argmax of the network output with the argmax of the label
             label = int(np.argmax(encoded_label))

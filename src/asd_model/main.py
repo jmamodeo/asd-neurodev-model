@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from asd_model.visual_input import *
-from asd_model.neural_network import *
+from asd_model.neural_network import DEFAULT_LEARNING_RATE, NeuralNetwork
+from asd_model.visual_input import encode_image_labels, image2matrix
 
 # Run from the repository root with: python -m asd_model   (or python main.py; options: --lr, --sessions, --wnt-delta, --ccl5-delta)
 if __name__ == '__main__':
@@ -53,6 +53,3 @@ if __name__ == '__main__':
     # You can set 'use_release_maps' to 'True'/'False' for biological dynamic weighting of signals or fixed weighting
     # Note: Release maps are on for both training and testing (same distribution); fixed weighting is less variable
     net.test(test_image_dict, encoded_label_dict, use_release_maps=True)
-
-
-

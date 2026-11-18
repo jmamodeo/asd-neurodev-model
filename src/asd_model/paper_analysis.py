@@ -283,11 +283,8 @@ def markdown_tables(stat):
     return "\n".join(lines) + "\n"
 
 
-FIGURE_KINDS = ("loss_curves", "sessions_to_criterion", "observed_vs_additive", "summary")
-
-
 def make_figure(kind, runs, tag, fig_dir, title, height=None):
-    """Write one figure (kind in FIGURE_KINDS) to fig_dir/<kind>_<tag>.png and return its path."""
+    """Write one figure (kind: loss_curves, sessions_to_criterion, observed_vs_additive or summary) to fig_dir/<kind>_<tag>.png and return its path."""
     os.makedirs(fig_dir, exist_ok=True)
     path = os.path.join(fig_dir, f"{kind}_{tag}.png")
     if kind == "loss_curves":
@@ -313,15 +310,4 @@ def write_tables(runs, tag, table_dir):
         json.dump(dict(tag=tag, datasets=stat), f, indent=1, default=float)
     with open(os.path.join(table_dir, f"summary_{tag}.md"), "w") as f:
         f.write(markdown_tables(stat))
-    return stat
-
-
-def analyze(runs, tag, fig_dir, table_dir, title):
-    """Tables plus all figures for one configuration."""
-    df = per_run_table(runs); stat = write_tables(runs, tag, table_dir)
-    os.makedirs(fig_dir, exist_ok=True)
-    figure_loss_curves(runs, os.path.join(fig_dir, f"loss_curves_{tag}.png"), title)
-    figure_sessions_to_criterion(df, len(runs[0]["train_loss"]), os.path.join(fig_dir, f"sessions_to_criterion_{tag}.png"), title)
-    figure_observed_vs_additive(df, stat, os.path.join(fig_dir, f"observed_vs_additive_{tag}.png"), title)
-    figure_summary(df, os.path.join(fig_dir, f"summary_{tag}.png"), title)
     return stat

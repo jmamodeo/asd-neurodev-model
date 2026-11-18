@@ -10,7 +10,7 @@ try:
 except ModuleNotFoundError as error:
     if error.name != "asd_model":
         raise
-    raise SystemExit("asd_model is not installed. From the repository root run: pip install -e .")
+    raise SystemExit("asd_model is not installed. From the repository root run: pip install -e .") from error
 
 if __name__ == "__main__":
     main()
