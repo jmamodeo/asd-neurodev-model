@@ -21,7 +21,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 CONDS = ["control", "ccl5", "wnt", "both"]
 LABEL = {"control": "Control", "ccl5": "CCL5", "wnt": "Wnt", "both": "Wnt + CCL5"}
-DATA = {"original": "Original images", "cifar3": "CIFAR-10 subset"}
+DATA = {"original": "Authors' images", "cifar3": "CIFAR-10 subset"}
 _cache = {}
 
 

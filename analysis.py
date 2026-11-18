@@ -1,6 +1,6 @@
 """Statistics, tables and figures for the corrected-network experiments (used by reproduce.py).
 
-The statistical plan is fixed in docs/paper/protocol.md (pre-specified before the runs): two-way ANOVA (Wnt, CCL5,
+The statistical plan is fixed in docs/paper/analysis_plan.md (pre-specified before the runs): two-way ANOVA (Wnt, CCL5,
 Wnt x CCL5) on the area under the training-loss curve (AUC) and on epochs-to-threshold, Welch one-tailed contrasts
 against the control with Holm correction, a within-seed permutation test of the interaction, and held-out accuracy
 compared with chance (25%).
@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 CONDS = ["control", "ccl5", "wnt", "both"]
 LABEL = {"control": "Control", "ccl5": "CCL5", "wnt": "Wnt", "both": "Wnt + CCL5"}
 COLOR = {"control": "#444444", "ccl5": "#1f77b4", "wnt": "#d62728", "both": "#9467bd"}
-DATA_LABEL = {"original": "Original images", "cifar3": "CIFAR-10 subset"}
+DATA_LABEL = {"original": "Authors' images", "cifar3": "CIFAR-10 subset"}
 LN4 = float(np.log(4))   # cross-entropy of a uniform guess over 4 classes
 CHANCE = 25.0
 
