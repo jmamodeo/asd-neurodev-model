@@ -220,11 +220,17 @@ class NeuralNetwork:
         """
 
         # FIX 3: use the maps from the forward pass
+        # (when the maps are the ones from the immediately preceding feedforward, W has not changed since,
+        # so the stored effective weights are reused instead of recomputing W * M)
         if release_maps is None:
             release_maps = self.last_release_maps
+            effective_weights = self.last_effective_weights
+        else:
+            effective_weights = None
         if release_maps is None:
             release_maps = [np.ones_like(w) for w in self.layer_weights]
-        effective_weights = [w * m for w, m in zip(self.layer_weights, release_maps)]
+        if effective_weights is None:
+            effective_weights = [w * m for w, m in zip(self.layer_weights, release_maps)]
 
         # Calculating differences in output matrix vs label matrix
         output_delta = layer_activities[-1] - encoded_label
