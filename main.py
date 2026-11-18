@@ -9,7 +9,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train and test the ASD Wnt/CCL5 neural network model.')
     parser.add_argument('--lr', type=float, default=DEFAULT_LEARNING_RATE,
-                        help='learning rate (default 0.03; the original paper code used 0.1)')
+                        help='learning rate (default 0.03; 0.1 makes the network unstable, see the paper supplement)')
     parser.add_argument('--sessions', type=int, default=100, help='training sessions (passes over the training set)')
     parser.add_argument('--wnt-delta', type=float, default=0.0, help='fold change above normal, ASD = 0.41859')
     parser.add_argument('--ccl5-delta', type=float, default=0.0, help='fold change above normal, ASD = 0.40467')

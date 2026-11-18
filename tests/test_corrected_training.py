@@ -78,7 +78,7 @@ def test_gradient_includes_release_map_finite_difference():
 
 
 def test_ccl5_release_map_statistics():
-    # Documented observation of the ORIGINAL formula Poisson(100*(1+d))/100, not a requirement:
+    # Documented observation of the release-map formula Poisson(100*(1+d))/100, not a requirement:
     # mean ~ 1+d and CV ~ 1/sqrt(100*(1+d)), so CCL5 elevation gives a slightly LOWER CV than control.
     np.random.seed(0)
     w = [np.zeros((300, 300))]

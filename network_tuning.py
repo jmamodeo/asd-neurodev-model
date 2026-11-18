@@ -78,8 +78,8 @@ def apply_softmax(layer):
     the highest probability is taken as the network's prediction of the image class to
     which a given image belongs.
 
-    FIX 2: this function is now actually applied to the output layer in feedforward()
-    (previously never reached). It operates along axis 0 and preserves the input dtype.
+    This function is applied to the output layer in feedforward(). It operates along axis 0
+    (column vectors) and preserves the input dtype.
 
     Parameters
     ----------
@@ -90,7 +90,7 @@ def apply_softmax(layer):
     image_class_probs
     """
 
-    # FIX 2: stabilise and normalise along axis 0 (column vectors); dtype is preserved
+    # Subtract the max for numerical stability, then normalise along axis 0 (column vectors)
     node_deltas = np.exp(layer - np.max(layer, axis=0, keepdims=True))
     image_class_probs = node_deltas / node_deltas.sum(axis=0)
     return image_class_probs
