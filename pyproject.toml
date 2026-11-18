@@ -14,7 +14,7 @@ classifiers = [
 ]
 # Python 3.11 is the version used in the paper; 3.12 also passes the tests with these pinned versions.
 requires-python = ">=3.11,<3.13"
-# Same pins as requirements.txt (the versions verified to run main.py and reproduce.py).
+# Same pins as requirements.txt (the versions verified to run the model and reproduce.py).
 dependencies = [
     "opencv-python==4.8.1.78",
     "numpy==1.26.4",
@@ -33,14 +33,18 @@ paper = ["Markdown==3.11.3", "weasyprint==70.0"]  # only to rebuild docs/paper/p
 [project.urls]
 Repository = "https://github.com/jmamodeo/asd-neurodev-model"
 
-# The code is run from the repository root (python main.py, python reproduce.py), so no modules are installed;
-# `pip install -e .` just installs the dependencies above.
+# `python -m asd_model` trains one network, `asd-reproduce` (or `python reproduce.py`) re-creates the paper's figures and tables.
+# The data, figures, tables and paper live in the repository, so install it editable: pip install -e .
+[project.scripts]
+asd-model = "asd_model.__main__:main"
+asd-reproduce = "asd_model.reproduce:main"
+
 [build-system]
 requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-py-modules = []
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

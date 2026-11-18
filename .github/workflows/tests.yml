@@ -7,7 +7,7 @@ on:
 
 jobs:
   pinned:
-    name: pytest (Python ${{ matrix.python-version }}, pinned requirements.txt)
+    name: pytest (Python ${{ matrix.python-version }}, pinned dependencies)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -19,8 +19,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
-          cache-dependency-path: requirements.txt
-      - run: pip install -r requirements.txt
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e .[test]
       - run: python -m pytest -q
 
   latest:
@@ -33,4 +33,5 @@ jobs:
         with:
           python-version: "3.13"
       - run: pip install opencv-python-headless numpy pandas seaborn matplotlib openpyxl scipy statsmodels pytest
+      - run: pip install -e . --no-deps
       - run: python -m pytest -q

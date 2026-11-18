@@ -1,5 +1,5 @@
-# Versions verified to run main.py end to end on Python 3.11.
-# seaborn >= 0.13 and pandas >= 3 break the training-loss plot in analyze_data.py.
+# Versions verified to run the model end to end on Python 3.11 (pyproject.toml lists the same pins; `pip install -e .` installs them).
+# seaborn >= 0.13 and pandas >= 3 are not the versions the paper's results were produced with.
 opencv-python==4.8.1.78
 numpy==1.26.4
 pandas==2.1.4
