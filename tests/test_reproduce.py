@@ -18,7 +18,7 @@ def test_default_learning_rate_is_0_03_and_supplement_selectable():
     assert inspect.signature(neural_network.NeuralNetwork.train).parameters["learning_rate"].default == 0.03
     with open(os.path.join(ROOT, "src", "asd_model", "main.py")) as f:
         main_source = f.read()
-    assert "--learning-rate" in main_source and "--lr" in main_source and "DEFAULT_LEARNING_RATE" in main_source
+    assert "--learning-rate" in main_source and "DEFAULT_LEARNING_RATE" in main_source
 
 
 def test_experiment_is_deterministic_for_a_seed_and_shuffles_identically_across_conditions(

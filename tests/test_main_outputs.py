@@ -52,4 +52,10 @@ def test_module_entry_point_runs():
     """`python -m asd_model --help` starts the main.py command line."""
     result = subprocess.run([sys.executable, "-m", "asd_model", "--help"], capture_output=True, text=True)
     assert result.returncode == 0 and "--wnt-delta" in result.stdout
-    assert "--learning-rate" in result.stdout and "--lr" in result.stdout
+    assert "--learning-rate" in result.stdout and "--lr " not in result.stdout
+
+
+def test_learning_rate_has_no_short_alias():
+    """`--learning-rate` is the only spelling; the old `--lr` alias is rejected."""
+    result = subprocess.run([sys.executable, "-m", "asd_model", "--lr", "0.03"], capture_output=True, text=True)
+    assert result.returncode != 0 and "unrecognized arguments: --lr" in result.stderr

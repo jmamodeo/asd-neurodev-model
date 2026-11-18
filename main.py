@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Shortcut for `python -m asd_model`: trains and tests one network.
 
-Options: --learning-rate (alias --lr), --sessions, --wnt-delta, --ccl5-delta.
+Options: --learning-rate, --sessions, --wnt-delta, --ccl5-delta.
 
 Needs the package installed once from the repository root: pip install -e .
 """

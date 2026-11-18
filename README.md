@@ -150,7 +150,7 @@ python -m asd_model --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbati
 python -m asd_model --learning-rate 0.1 --sessions 50                # other learning rate, fewer sessions
 ```
 
-Command-line options: `--learning-rate` (alias `--lr`; learning rate, default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
+Command-line options: `--learning-rate` (default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
 
 Settings edited inside `src/asd_model/main.py`:
 
