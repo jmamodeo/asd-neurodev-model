@@ -6,14 +6,14 @@ A Python neural-network model of how elevated Wnt and mTOR-activated CCL5 signal
 
 ASD is a heterogeneous neurodevelopmental disorder, and vision is one of the senses particularly affected. Two pathways, Wnt and mTOR, have been identified as high risk. Wnt proteins stabilize synapses, and mTOR activates CCL5, which stimulates glutamate release. In excess, these proteins cause unnecessary synapses to form and survive, a hallmark of ASD.
 
-The paper uses visual processing as a base to examine the effect of both proteins at ASD levels in a neural network, as a way to study population dynamics rather than only single cells. The revised paper (November 2026, `docs/paper/paper.pdf`) reports that, in a corrected and re-analyzed version of the model, both perturbations slow the reduction of training loss, that the two together slow it more than the sum of their separate effects, and that held-out classification accuracy stays near chance because the image sets are very small. The first version's classification claim does not hold; see `docs/paper/CHANGELOG.md`.
+The paper uses visual processing as a base to examine the effect of both proteins at ASD levels in a neural network, as a way to study population dynamics rather than only single cells. The paper ([docs/paper/paper.pdf](docs/paper/paper.pdf)) reports that both perturbations slow the reduction of training loss, that the two together slow it more than the sum of their separate effects, and that held-out classification accuracy stays near chance because the image sets are very small.
 
 ## How the model works
 
 - **Input.** `visual_input.py` reads each image, converts it to grayscale, resizes it to a square whose side is `sqrt(image_vector_size)`, scales pixel values to 0-1, and flattens it into a vector of length `image_vector_size`. This vector is the input layer.
 - **Layer sizes.** Hidden layers start equal in size to the input layer. With `wnt_delta`, each hidden layer gains `int(previous_size * wnt_delta)` nodes over the previous layer, modeling extra synapses (more connections and redundancy). The output layer has one node per class.
 - **CCL5 / glutamate release.** For each forward pass, `network_tuning.py` draws a release map for every weight matrix from a Poisson distribution with mean `100 * (1 + ccl5_delta)`, divided by 100. The weights are multiplied by these maps, modeling stochastic glutamate release.
-- **Learning.** Hidden layers use sigmoid activations and the output layer uses a softmax; loss is cross-entropy. Gradients are clipped to a maximum norm of 1.0. Each session presents all training images once in a freshly shuffled, class-mixed order. The default learning rate is **0.03** (the original code used 0.1, which makes the corrected network unstable; use `--lr 0.1` to select it).
+- **Learning.** Hidden layers use sigmoid activations and the output layer uses a softmax; loss is cross-entropy. Gradients are clipped to a maximum norm of 1.0. Each session presents all training images once in a freshly shuffled, class-mixed order. The default learning rate is **0.03**; `--lr 0.1` selects 0.1, which makes this network unstable (see the paper's supplementary analysis).
 - **Release maps in training and testing.** The release maps multiply the weights in both the forward and the backward pass, and the same distribution is used for training and testing (`use_release_maps` defaults to `True`).
 - **Accuracy** is the highest-probability output node compared with the label, on held-out test images (chance = 25% with four classes).
 
@@ -53,7 +53,7 @@ Citation: Krizhevsky, A. (2009). Learning Multiple Layers of Features from Tiny 
 
 **Option B: your own images.** Put images (any format OpenCV can read) in the class folders. Only image files may be present; hidden files such as `.DS_Store` will break loading.
 
-The original paper used a small set of web images that are not redistributed here.
+The paper's own image set (small web images) is not redistributed here.
 
 ## Running
 
@@ -72,7 +72,7 @@ Parameters set in `main.py`:
 | `hidden_layer_number` | 4 | Number of hidden layers |
 | `ccl5_delta` | 0 | Fold difference in CCL5 relative to normal (e.g., 0.4 for 1.4 fold) |
 | `wnt_delta` | 0 | Fold difference in Wnt relative to normal |
-| `learn_r` | 0.03 (`--lr`) | Learning rate (the original code used 0.1) |
+| `learn_r` | 0.03 (`--lr`) | Learning rate |
 | `sessions` | 100 | Passes over the full training set |
 | `use_release_maps` | `True` | Release-map weighting at test time (always on in training) |
 
@@ -95,24 +95,37 @@ The paper compares four conditions, which can be set as examples:
 
 ## Reproduce the figures
 
-One command regenerates every figure and table in the paper (main configuration, learning rate 0.03, and the supplementary learning rate 0.1):
+**Everything at once (one command):**
 
 ```
 pip install -r requirements.txt
 python reproduce.py            # or ./reproduce.sh, or: make figures
 ```
 
-Output: `figures/` (Figures 1-3 and Supplementary Figures S1-S2 as `loss_curves_lr0.03.png`, `auc_interaction_lr0.03.png`, `summary_lr0.03.png`, `loss_curves_lr0.1.png`, `auc_interaction_lr0.1.png`, `summary_lr0.1.png`) and `tables/` (per-run values, all statistics as JSON, summary tables as Markdown).
+**One figure at a time** (each script runs alone, trains only the runs that figure needs and shares the same run cache, so you can make just one):
 
-- The repository ships the finished runs (`reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz`: 4 conditions x 20 seeds x 2 image sets each). `python reproduce.py` therefore **re-analyzes and re-plots from those runs (about 15 seconds)**; it reproduces the numbers in the paper exactly (the statistics were verified to agree with the original analysis to better than 1e-12).
-- `python reproduce.py --retrain` ignores the shipped runs and retrains everything from scratch on the CIFAR-10 subset (downloaded automatically with `scripts/fetch_cifar10.py`, about 163 MB). Each CIFAR-10 configuration is 80 networks x about 8 CPU-minutes for the Wnt conditions (and under a minute for the others), roughly 2-3 hours per learning rate on an 8-core machine (`--workers N`). The original images are not redistributed; to retrain on them as well pass `--original-images DIR` (folders `train_subset/` and `test_subset/` with `trucks`, `dogs`, `cats`, `cars`). Without them, the shipped runs still provide the original-image figures.
-- `python reproduce.py --quick` is a smoke test (3 seeds, 20 sessions, CIFAR-10 only, about 1-2 minutes after the download) writing to `figures_quick/` and `tables_quick/`.
-- Seeds are fixed. On the same machine and library versions a retrained run reproduces the shipped run **bit for bit**; across different numpy/BLAS builds the first session agrees to about 1e-4 but float32 rounding differences are amplified by the training dynamics, so individual curves differ while the statistics agree (see `docs/paper/CHANGELOG.md` and the verification note in `docs/paper/README.md`).
-- Rebuild the paper PDF with `pip install -r docs/paper/requirements.txt && python docs/paper/build_paper.py` (numbers are filled in from `tables/`).
+| Paper figure | Script | Output |
+|---|---|---|
+| Figure 1: training and held-out loss curves (learning rate 0.03) | `python scripts/figures/fig1_loss_curves.py` | `figures/loss_curves_lr0.03.png` |
+| Figure 2: AUC, Wnt x CCL5 interaction plot | `python scripts/figures/fig2_auc_interaction.py` | `figures/auc_interaction_lr0.03.png` |
+| Figure 3: final loss, sessions to chance-level loss, held-out accuracy | `python scripts/figures/fig3_summary.py` | `figures/summary_lr0.03.png` |
+| Supplementary Figure S1: loss curves at learning rate 0.1 | `python scripts/figures/figS1_loss_curves_lr0.1.py` | `figures/loss_curves_lr0.1.png` |
+| Supplementary Figure S2: interaction plot at learning rate 0.1 | `python scripts/figures/figS2_auc_interaction_lr0.1.py` | `figures/auc_interaction_lr0.1.png` |
+| (extra) summary panels at learning rate 0.1 | `python scripts/figures/figS3_summary_lr0.1.py` | `figures/summary_lr0.1.png` |
+| Tables 1-3: all statistics | `python scripts/figures/tables.py` | `tables/statistics_*.json`, `summary_*.md`, `per_run_*.csv` |
+
+`python reproduce.py --only fig1 fig3` does the same for any subset. All scripts accept the options below. Figures 1-3 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.
+
+- The repository ships the finished runs (`reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz`: 4 conditions x 20 seeds x 2 image sets each). By default the scripts therefore **re-analyze and re-plot from those runs (seconds to about 30 seconds)** and reproduce the numbers in the paper exactly.
+- `--retrain` ignores the shipped runs and retrains from scratch on the CIFAR-10 subset (downloaded automatically with `scripts/fetch_cifar10.py`, about 163 MB). Each configuration is 80 networks per image set (4 conditions x 20 seeds); the Wnt conditions take roughly 8 CPU-minutes per network and the others under a minute, so about 2-3 hours per learning rate on an 8-core machine (`--workers N`, default all cores). The authors' image set is not redistributed; to retrain on it as well pass `--original-images DIR` (folders `train_subset/` and `test_subset/` containing `trucks`, `dogs`, `cats`, `cars`). Without it the shipped runs still provide the authors'-image panels.
+- `--quick` is a smoke test (3 seeds, 20 sessions, CIFAR-10 only) writing to `figures_quick/` and `tables_quick/`.
+- `--seeds N`, `--sessions N` change the number of seeds (default 20) and sessions (default 100).
+- Seeds are fixed. On the same machine and library versions a retrained run reproduces the shipped run bit for bit. Across different numpy/BLAS builds the first training session agrees to about 1e-4 but float32 rounding differences are amplified by the training dynamics, so individual curves differ while the group statistics agree.
+- Rebuild the paper PDF with `pip install -r docs/paper/requirements.txt && python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
 
 ## Citation
 
-Marri, R. & Amodeo, J. (2023; revised 2026). Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics. [docs/paper/paper.pdf](docs/paper/paper.pdf) (revised November 2026; source in `docs/paper/paper.md`)
+Marri, R. & Amodeo, J. (2023). Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics. [docs/paper/paper.pdf](docs/paper/paper.pdf) (source in `docs/paper/paper.md`)
 
 ```bibtex
 @misc{marri2023wntmtor,
@@ -124,7 +137,7 @@ Marri, R. & Amodeo, J. (2023; revised 2026). Modeling the effects of the Wnt and
 
 ## Limitations
 
-From the revised paper's Limitations section:
+From the paper's Limitations section:
 
 - Compute limited the work to 100 training sessions and 900-node layers.
 - Held-out accuracy is near chance in all four conditions because the image sets contain only three training and three test images per class.

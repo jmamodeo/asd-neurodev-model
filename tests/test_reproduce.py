@@ -58,3 +58,13 @@ def test_shipped_runs_reproduce_paper_numbers():
     assert abs(o["summary"]["both"]["auc"]["mean"] - 4.42) < 0.01
     assert o["anova"]["auc"]["Wnt x CCL5"]["p"] < 1e-9
     assert all(o["summary"][c]["auc"]["mean"] > o["summary"]["control"]["auc"]["mean"] for c in ("ccl5", "wnt", "both"))
+
+
+def test_every_figure_has_a_standalone_script():
+    import os
+    import reproduce
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    scripts = os.listdir(os.path.join(root, "scripts", "figures"))
+    for key in reproduce.FIGURES:
+        assert any(f.startswith(key + "_") for f in scripts), key
+    assert "tables.py" in scripts

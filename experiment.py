@@ -1,4 +1,4 @@
-"""Run one (dataset, condition, seed) experiment with the corrected network and save the per-session curves as JSON.
+"""Run one (dataset, condition, seed) experiment and save the per-session curves as JSON.
 
 Used by reproduce.py. Conditions are the four paper conditions (a 2x2 of Wnt x CCL5):
 control, ccl5, wnt, both, with the ASD fold changes from the paper (dWnt = 0.41859, dCCL5 = 0.40467).

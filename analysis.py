@@ -1,4 +1,4 @@
-"""Statistics, tables and figures for the corrected-network experiments (used by reproduce.py).
+"""Statistics, tables and figures (used by reproduce.py).
 
 The statistical plan is fixed in docs/paper/analysis_plan.md (pre-specified before the runs): two-way ANOVA (Wnt, CCL5,
 Wnt x CCL5) on the area under the training-loss curve (AUC) and on epochs-to-threshold, Welch one-tailed contrasts
@@ -219,15 +219,41 @@ def markdown_tables(stat):
     return "\n".join(lines) + "\n"
 
 
-def analyze(runs, tag, fig_dir, table_dir, title):
-    """runs: list of run dicts. Writes figures to fig_dir and tables to table_dir; returns the statistics dict."""
-    os.makedirs(fig_dir, exist_ok=True); os.makedirs(table_dir, exist_ok=True)
+FIGURE_KINDS = ("loss_curves", "auc_interaction", "summary")
+
+
+def make_figure(kind, runs, tag, fig_dir, title):
+    """Write one figure (kind in FIGURE_KINDS) to fig_dir/<kind>_<tag>.png and return its path."""
+    os.makedirs(fig_dir, exist_ok=True)
+    path = os.path.join(fig_dir, f"{kind}_{tag}.png")
+    if kind == "loss_curves":
+        figure_loss_curves(runs, path, title)
+    elif kind == "auc_interaction":
+        df = per_run_table(runs)
+        figure_auc_interaction(df, compute_statistics(df), path, title)
+    elif kind == "summary":
+        figure_summary(per_run_table(runs), path, title)
+    else:
+        raise ValueError(kind)
+    return path
+
+
+def write_tables(runs, tag, table_dir):
+    """Write per-run values, the full statistics (JSON) and the summary table (Markdown); returns the statistics dict."""
+    os.makedirs(table_dir, exist_ok=True)
     df = per_run_table(runs); stat = compute_statistics(df)
     df.to_csv(os.path.join(table_dir, f"per_run_{tag}.csv"), index=False)
     with open(os.path.join(table_dir, f"statistics_{tag}.json"), "w") as f:
         json.dump(dict(tag=tag, datasets=stat), f, indent=1, default=float)
     with open(os.path.join(table_dir, f"summary_{tag}.md"), "w") as f:
         f.write(markdown_tables(stat))
+    return stat
+
+
+def analyze(runs, tag, fig_dir, table_dir, title):
+    """Tables plus all figures for one configuration."""
+    df = per_run_table(runs); stat = write_tables(runs, tag, table_dir)
+    os.makedirs(fig_dir, exist_ok=True)
     figure_loss_curves(runs, os.path.join(fig_dir, f"loss_curves_{tag}.png"), title)
     figure_auc_interaction(df, stat, os.path.join(fig_dir, f"auc_interaction_{tag}.png"), title)
     figure_summary(df, os.path.join(fig_dir, f"summary_{tag}.png"), title)

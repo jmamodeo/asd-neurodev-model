@@ -7,7 +7,7 @@
 | Wnt | 20 | 14.97 ± 1.13 | 6.98 ± 1.02 | 14.75 ± 2.15 | 6.0 ± 1.1 (1.00) | 27.2 ± 9.8 (0.95) | 26.7 ± 1.6 | 15.61 ± 0.66 |
 | Wnt + CCL5 | 20 | 15.15 ± 0.72 | 16.76 ± 0.21 | 18.66 ± 0.34 | 15.8 ± 9.7 (0.95) | 101.0 ± 0.0 (0.00) | 25.0 ± 0.0 | 17.24 ± 0.04 |
 
-### Original images
+### Authors' images
 | condition | n | session-1 loss | AUC | final loss | sessions to 50% of initial (frac reached) | sessions to ln 4 (frac reached) | held-out acc % | held-out loss |
 |---|---|---|---|---|---|---|---|---|
 | Control | 20 | 12.53 ± 1.23 | 10.28 ± 0.54 | 12.85 ± 0.68 | 4.0 ± 0.6 (1.00) | 45.5 ± 19.8 (0.65) | 22.9 ± 3.3 | 13.08 ± 0.86 |
