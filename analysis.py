@@ -199,7 +199,7 @@ def figure_summary(df, path, title):
                 ax.scatter(xi + rng.uniform(-.18, .18, len(v)), v, s=10, color=COLOR[c], alpha=.35)
                 ax.errorbar(xi, m, yerr=h, color="k", marker="D", capsize=4, ms=5)
             if ref is not None:
-                ax.axhline(ref, color="k", ls=":", lw=.8); ax.text(3.4, ref, "chance", va="bottom", ha="right", fontsize=8)
+                ax.axhline(ref, color="k", ls=":", lw=.8); ax.text(-0.45, ref, "chance", va="bottom", ha="left", fontsize=8)
             ax.set_xticks(range(4)); ax.set_xticklabels([LABEL[c] for c in CONDS], fontsize=8)
             ax.set_title(f"{DATA_LABEL.get(data, data)}", fontsize=9); ax.set_ylabel(name, fontsize=8)
     fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
