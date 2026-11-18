@@ -12,15 +12,17 @@ Everything else (layer sizes, N(0,1) init, clipping, per-image SGD, 4 hidden lay
 is as in neural_network.py.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")       # one BLAS thread per worker: deterministic and parallel-friendly
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 import json
 import time
+
 import numpy as np
 
-from asd_model.visual_input import image2matrix, encode_image_labels
 from asd_model.neural_network import NeuralNetwork
+from asd_model.visual_input import encode_image_labels, image_to_matrix
 
 CONDITIONS = {  # name: (ccl5_delta, wnt_delta)
     "control": (0.0, 0.0),
@@ -61,8 +63,8 @@ def run_one(data_name, data_dir, cond, seed, lr, sessions, out_dir):
     if os.path.exists(path):
         return path
     ccl5, wnt = CONDITIONS[cond]
-    train = _float32(image2matrix(os.path.join(data_dir, "train_subset"), CLASS_LIST, IMAGE_VECTOR_SIZE))
-    test = _float32(image2matrix(os.path.join(data_dir, "test_subset"), CLASS_LIST, IMAGE_VECTOR_SIZE))
+    train = _float32(image_to_matrix(os.path.join(data_dir, "train_subset"), CLASS_LIST, IMAGE_VECTOR_SIZE))
+    test = _float32(image_to_matrix(os.path.join(data_dir, "test_subset"), CLASS_LIST, IMAGE_VECTOR_SIZE))
     labels = {k: v.astype(np.float32) for k, v in encode_image_labels(train).items()}
     np.random.seed(seed)                                       # initial weights (matched between control and CCL5)
     net = NeuralNetwork(CLASS_LIST, IMAGE_VECTOR_SIZE, HIDDEN_LAYERS, ccl5_delta=ccl5, wnt_delta=wnt)

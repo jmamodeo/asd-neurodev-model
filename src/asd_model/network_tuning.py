@@ -1,6 +1,5 @@
 import numpy as np
 
-
 # Below are non-class-specific functions used for neural network training, testing, and bio simulation.
 
 def get_release_maps(layer_weights, ccl5_delta):

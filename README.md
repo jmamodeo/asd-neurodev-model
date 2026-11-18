@@ -66,7 +66,7 @@ To train a single network on your own images or on CIFAR-10, see [Running one ne
 - **Input.** `asd_model/visual_input.py` reads each image, converts it to grayscale, resizes it to a square whose side is `sqrt(image_vector_size)`, scales pixel values to 0-1, and flattens it into a vector of length `image_vector_size`. This vector is the input layer.
 - **Layer sizes.** Hidden layers start equal in size to the input layer. With `wnt_delta`, each hidden layer gains `int(previous_size * wnt_delta)` nodes over the previous layer, modeling extra synapses (more connections and redundancy). The output layer has one node per class.
 - **CCL5 / glutamate release.** For each forward pass, `asd_model/network_tuning.py` draws a release map for every weight matrix from a Poisson distribution with mean `100 * (1 + ccl5_delta)`, divided by 100. The weights are multiplied by these maps, modeling stochastic glutamate release.
-- **Learning.** Hidden layers use sigmoid activations and the output layer uses a softmax; loss is cross-entropy. Gradients are clipped to a maximum norm of 1.0. Each session presents all training images once in a freshly shuffled, class-mixed order. The default learning rate is **0.03**; `--lr 0.1` selects 0.1, which makes this network unstable (see the paper's supplementary analysis).
+- **Learning.** Hidden layers use sigmoid activations and the output layer uses a softmax; loss is cross-entropy. Gradients are clipped to a maximum norm of 1.0. Each session presents all training images once in a freshly shuffled, class-mixed order. The default learning rate is **0.03**; `--learning-rate 0.1` selects 0.1, which makes this network unstable (see the paper's supplementary analysis).
 - **Release maps in training and testing.** The release maps multiply the weights in both the forward and the backward pass, and the same distribution is used for training and testing (`use_release_maps` defaults to `True`).
 - **Accuracy** is the highest-probability output node compared with the label, on held-out test images (chance = 25% with four classes).
 
@@ -147,10 +147,10 @@ From the repository root:
 ```bash
 python -m asd_model                                       # control network (python main.py does the same)
 python -m asd_model --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
-python -m asd_model --lr 0.1 --sessions 50                # other learning rate, fewer sessions
+python -m asd_model --learning-rate 0.1 --sessions 50                # other learning rate, fewer sessions
 ```
 
-Command-line options: `--lr` (learning rate, default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
+Command-line options: `--learning-rate` (alias `--lr`; learning rate, default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
 
 Settings edited inside `src/asd_model/main.py`:
 
@@ -161,7 +161,7 @@ Settings edited inside `src/asd_model/main.py`:
 | `hidden_layer_number` | 4 | Number of hidden layers |
 | `ccl5_delta` | 0 (`--ccl5-delta`) | Fold difference in CCL5 relative to normal (e.g., 0.4 for 1.4 fold) |
 | `wnt_delta` | 0 (`--wnt-delta`) | Fold difference in Wnt relative to normal |
-| `learn_r` | 0.03 (`--lr`) | Learning rate |
+| `learning_rate` | 0.03 (`--learning-rate`) | Learning rate |
 | `sessions` | 100 (`--sessions`) | Passes over the full training set |
 | `use_release_maps` | `True` | Release-map weighting at test time (always on in training) |
 

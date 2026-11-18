@@ -26,6 +26,7 @@ Seeds are fixed (seed s always gives the same initial weights, shuffle order and
 deterministic on the same machine/library versions.
 """
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")

@@ -11,11 +11,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def test_default_learning_rate_is_0_03_and_original_selectable():
     import inspect
+
     from asd_model import neural_network
-    assert neural_network.DEFAULT_LEARNING_RATE == 0.03 and neural_network.ORIGINAL_LEARNING_RATE == 0.1
-    assert inspect.signature(neural_network.NeuralNetwork.train).parameters["learn_r"].default == 0.03
+    assert neural_network.DEFAULT_LEARNING_RATE == 0.03 and neural_network.SUPPLEMENT_LEARNING_RATE == 0.1
+    assert inspect.signature(neural_network.NeuralNetwork.train).parameters["learning_rate"].default == 0.03
     src = open(os.path.join(ROOT, "src", "asd_model", "main.py")).read()
-    assert "--lr" in src and "DEFAULT_LEARNING_RATE" in src
+    assert "--learning-rate" in src and "--lr" in src and "DEFAULT_LEARNING_RATE" in src
 
 
 def _write_images(root, per_class=2):
@@ -68,6 +69,7 @@ def test_shipped_runs_reproduce_paper_numbers():
 
 def test_every_figure_has_a_standalone_script():
     import os
+
     from asd_model import reproduce
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scripts = os.listdir(os.path.join(root, "scripts", "figures"))
@@ -77,8 +79,7 @@ def test_every_figure_has_a_standalone_script():
 
 
 def test_schematic_layer_sizes_match_shipped_runs():
-    from asd_model import reproduce
-    from asd_model import model_figures
+    from asd_model import model_figures, reproduce
     seen = {r["cond"]: r["layer_sizes"] for r in reproduce.load_bundle(0.03)}
     assert model_figures.layer_sizes(0.0) == seen["control"] == seen["ccl5"]
     assert model_figures.layer_sizes(model_figures.WNT_DELTA) == seen["wnt"] == seen["both"] == [900, 1276, 1810, 2567, 3641, 4]
@@ -86,6 +87,7 @@ def test_schematic_layer_sizes_match_shipped_runs():
 
 def test_release_map_figure_statistics():
     import numpy as np
+
     from asd_model import model_figures
     for delta in (0.0, model_figures.CCL5_DELTA):
         v = model_figures.sample_release_values(delta, n=1_000_000)
@@ -96,8 +98,8 @@ def test_release_map_figure_statistics():
 
 def test_observed_vs_additive_estimates():
     import numpy as np
-    from asd_model import reproduce
-    from asd_model import paper_analysis
+
+    from asd_model import paper_analysis, reproduce
     df = paper_analysis.per_run_table([r for r in reproduce.load_bundle(0.03) if r["data"] == "cifar3"])
     E = paper_analysis.observed_vs_additive(df, "auc")
     m = df.groupby("cond").auc.mean()

@@ -5,10 +5,20 @@ from asd_model.network_tuning import apply_sigmoid, apply_softmax, get_release_m
 
 # Default learning rate. A learning rate of 0.1 makes the N(0,1)-initialised network unstable (shuffled training,
 # softmax output, release map in backprop), so 0.03 is the default (selected from a control-only pilot, see
-# docs/paper and README). The larger value, 0.1, is kept as ORIGINAL_LEARNING_RATE and can be chosen with
-# learn_r=ORIGINAL_LEARNING_RATE (or --lr 0.1 in main.py / reproduce.py); the paper's supplement uses it.
+# docs/paper and README). The larger value, 0.1, is kept as SUPPLEMENT_LEARNING_RATE because the paper's supplement
+# uses it; choose it with learning_rate=SUPPLEMENT_LEARNING_RATE (or --learning-rate 0.1 in main.py).
 DEFAULT_LEARNING_RATE = 0.03
-ORIGINAL_LEARNING_RATE = 0.1
+SUPPLEMENT_LEARNING_RATE = 0.1
+
+# Training sessions (passes over the training set) when the number is not given
+DEFAULT_SESSIONS = 100
+
+# Fold changes above normal found in ASD and used for the paper's perturbed conditions (see the paper)
+ASD_WNT_DELTA = 0.41859
+ASD_CCL5_DELTA = 0.40467
+
+# Small value added inside the logarithm of the cross-entropy loss so that log(0) never happens
+LOG_EPSILON = 1e-10
 
 
 # Below is the Neural Network class with its functions for neural network creation, training, and testing.
@@ -163,7 +173,7 @@ class NeuralNetwork:
 
         return layer_activities
 
-    def feedback(self, encoded_label, layer_activities, learn_r, release_maps=None, max_gradient_norm=1.0):
+    def feedback(self, encoded_label, layer_activities, learning_rate, release_maps=None, max_gradient_norm=1.0):
         """
         This function updates the weights and biases for connections between layers of the
         network based on the differences between image class probabilities held by nodes in
@@ -187,7 +197,7 @@ class NeuralNetwork:
 
         The deltas for each layer used to update their associated weights by multiplying the layer delta
         by the transposition of the layer activity. The values in the resulting matrix are scaled by
-        multiplying it by a pre-set learning rate ('learn_r') passed in. This scaled matrix of weight
+        multiplying it by a pre-set learning rate ('learning_rate') passed in. This scaled matrix of weight
         updates is then subtracted from the existing layer weight matrix.
 
         Layer deltas are also used to update the biases associated with each layer by first multiplying
@@ -216,7 +226,7 @@ class NeuralNetwork:
         ----------
         encoded_label
         layer_activities
-        learn_r
+        learning_rate
         release_maps
         max_gradient_norm
 
@@ -242,7 +252,7 @@ class NeuralNetwork:
         output_delta = layer_activities[-1] - encoded_label
 
         # Calculating loss based on output vs label
-        loss = -np.sum(encoded_label * np.log(layer_activities[-1] + 1e-10))
+        loss = -np.sum(encoded_label * np.log(layer_activities[-1] + LOG_EPSILON))
 
         # Backpropagation of differences in output matrix vs label matrix
         # Propagate through the effective weights E = W * M, and use 1 - a directly
@@ -269,12 +279,12 @@ class NeuralNetwork:
             back_layer = -1 * (layer + 1)
             # Chain rule through W * M gives dL/dW = (delta @ a_prev.T) * M
             weight_gradient = np.dot(layer_deltas[layer], layer_activities[back_layer - 1].T) * release_maps[back_layer]
-            self.layer_weights[back_layer] -= learn_r * weight_gradient
-            self.layer_biases[back_layer] -= learn_r * layer_deltas[layer]
+            self.layer_weights[back_layer] -= learning_rate * weight_gradient
+            self.layer_biases[back_layer] -= learning_rate * layer_deltas[layer]
 
         return loss
 
-    def run_session(self, training_image_dict, encoded_label_dict, learn_r=DEFAULT_LEARNING_RATE):
+    def run_session(self, training_image_dict, encoded_label_dict, learning_rate=DEFAULT_LEARNING_RATE):
         """
         This function runs one training session: one pass over every training image, in a freshly
         shuffled order, with a forward pass (release maps on) and a weight update per image.
@@ -298,13 +308,13 @@ class NeuralNetwork:
         for index in np.random.permutation(len(examples)):
             image_class, image_vector = examples[index]
             layer_activities = self.feedforward(image_vector, use_release_maps=True)
-            loss = self.feedback(encoded_label_dict[image_class], layer_activities, learn_r)
+            loss = self.feedback(encoded_label_dict[image_class], layer_activities, learning_rate)
             losses.append(loss)
             class_names.append(image_class)
 
         return losses, class_names
 
-    def train(self, training_image_dict, encoded_label_dict, learn_r=DEFAULT_LEARNING_RATE, sessions=100):
+    def train(self, training_image_dict, encoded_label_dict, learning_rate=DEFAULT_LEARNING_RATE, sessions=DEFAULT_SESSIONS):
         """
         This function trains the neural network to classify images according to the specific class
         labels with which the images are paired.
@@ -344,7 +354,7 @@ class NeuralNetwork:
         ----------
         training_image_dict
         encoded_label_dict
-        learn_r
+        learning_rate
         sessions
         """
 
@@ -354,7 +364,7 @@ class NeuralNetwork:
         loss_table_list = []
         session_list = []
         for session in range(sessions):
-            losses, class_names = self.run_session(training_image_dict, encoded_label_dict, learn_r)
+            losses, class_names = self.run_session(training_image_dict, encoded_label_dict, learning_rate)
             total_loss = sum(losses)
 
             loss_table = {image_class: [] for image_class in training_image_dict}
@@ -376,7 +386,7 @@ class NeuralNetwork:
     def evaluate(self, image_dict, encoded_label_dict, use_release_maps=True):
         """
         This function measures performance without updating any weights or biases. It returns the
-        mean cross-entropy loss per example (-sum(label * log(output + 1e-10)), the same definition
+        mean cross-entropy loss per example (-sum(label * log(output + LOG_EPSILON)), the same definition
         used in feedback()) and the accuracy percentage (argmax of the output layer vs argmax of
         the encoded label).
 
@@ -393,7 +403,7 @@ class NeuralNetwork:
             label = int(np.argmax(encoded_label))
             for image_vector in image_list:
                 output = self.feedforward(image_vector, use_release_maps)[-1]
-                total_loss += -np.sum(encoded_label * np.log(output + 1e-10))
+                total_loss += -np.sum(encoded_label * np.log(output + LOG_EPSILON))
                 num_correct += int(int(np.argmax(output)) == label)
                 num_images += 1
 

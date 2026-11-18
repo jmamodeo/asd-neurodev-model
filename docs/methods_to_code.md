@@ -1,12 +1,12 @@
 # Methods-to-code map
 
-Where each step described in the paper's Methods (`docs/paper/paper.md`) lives in the code. Function and file names are used instead of line numbers so the map stays valid as the code is edited. All modules are in `src/asd_model/` (for example `visual_input.image2matrix()` is `src/asd_model/visual_input.py`).
+Where each step described in the paper's Methods (`docs/paper/paper.md`) lives in the code. Function and file names are used instead of line numbers so the map stays valid as the code is edited. All modules are in `src/asd_model/` (for example `visual_input.image_to_matrix()` is `src/asd_model/visual_input.py`).
 
 ## The model
 
 | Paper (Methods) | Code | Notes |
 |---|---|---|
-| Visual input: grayscale, resize to 30 x 30, scale to 0-1, flatten to 900 x 1 | `visual_input.image2matrix()` | OpenCV `imread`, `cvtColor`, `resize`; side length is `sqrt(image_vector_size)` |
+| Visual input: grayscale, resize to 30 x 30, scale to 0-1, flatten to 900 x 1 | `visual_input.image_to_matrix()` | OpenCV `imread`, `cvtColor`, `resize`; side length is `sqrt(image_vector_size)` |
 | One-hot encoded labels | `visual_input.encode_image_labels()` | One column vector of 0s and a single 1 per class |
 | Layer sizes; all hidden layers start equal to the input layer | `NeuralNetwork.__init__()` (`self.layer_sizes`) | 900 inputs, 4 hidden layers, 4 outputs in the paper |
 | Wnt: each hidden layer gains `int(previous_size * wnt_delta)` nodes | `NeuralNetwork.__init__()` (`additional_nodes`) | `wnt_delta` = 0.41859 gives 900, 1276, 1810, 2567, 3641 (drawn in Figure 1) |

@@ -7,10 +7,10 @@ have written that they have made publicly available. You will see how we use the
 later on, for now this command 'import' tells the computer: we want to use the
 listed packages and their files in our project so keep them handy.
 """
-import cv2
 import os
-import numpy as np
 
+import cv2
+import numpy as np
 
 # (This is a comment, specified by a hashtag, it also lets you write comments :)
 # that the computer ignores. These are best for one-liners though As you can see,
@@ -24,7 +24,7 @@ it and its associated instructions in main.py. Look up 'functions python' online
 """
 
 
-def image2matrix(image_directory, class_list, vector_size):
+def image_to_matrix(image_directory, class_list, vector_size):
     # The words inside the () are called 'parameters'. Look up 'python parameters' and 'arguments'.
     """
     Under every function, it is good to write a description of what it does.

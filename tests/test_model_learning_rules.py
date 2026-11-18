@@ -2,8 +2,8 @@ import copy
 
 import numpy as np
 
-from asd_model.neural_network import NeuralNetwork
 from asd_model.network_tuning import get_release_maps
+from asd_model.neural_network import LOG_EPSILON, NeuralNetwork
 
 
 def make_net(n_in=5, hidden=2, classes=("a", "b", "c"), ccl5_delta=0.0):
@@ -30,7 +30,7 @@ def test_accuracy_uses_output():
 def _loss(net, x, label, maps):
     net.release_map_fn = lambda w, d: maps
     out = net.feedforward(x, True)[-1]
-    return -np.sum(label * np.log(out + 1e-10))
+    return -np.sum(label * np.log(out + LOG_EPSILON))
 
 
 def test_gradient_includes_release_map_finite_difference():

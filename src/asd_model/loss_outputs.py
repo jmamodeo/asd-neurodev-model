@@ -1,9 +1,10 @@
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
-import pandas as pd
-import os
 import datetime
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from matplotlib.ticker import MultipleLocator
 
 SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split('.')[:2]) >= (0, 13)
 
