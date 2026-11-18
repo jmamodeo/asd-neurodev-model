@@ -34,25 +34,33 @@ ASD is a heterogeneous neurodevelopmental disorder, and vision is one of the sen
 
 The paper uses visual processing as a base to examine the effect of both proteins at ASD levels in a neural network, as a way to study population dynamics rather than only single cells. It reports that both perturbations slow the reduction of training loss, that the two together slow it more than the sum of their separate effects, and that held-out classification accuracy stays near chance because the image sets are very small.
 
-## Quick start
+## Usage
 
-Needs Python 3.11 (3.12 also works with the pinned versions).
+There is one way to do each task. Run every command from the repository root, in a virtual environment (Python 3.11; 3.12 also works with the pinned versions).
 
 ```bash
 git clone https://github.com/jmamodeo/asd-neurodev-model.git
 cd asd-neurodev-model
 python3.11 -m venv venv && source venv/bin/activate
-pip install -e .[test]                 # installs the package (src/asd_model) and the pinned dependencies
-
-python reproduce.py                    # re-creates every figure and table of the paper (about 30 seconds)
-python -m pytest -q                    # runs the tests
+pip install -e .[test]
 ```
 
-To train a single network on your own images or on CIFAR-10, see [Running one network](#running-one-network-mainpy).
+| Task | The one command |
+|---|---|
+| Install (once) | `pip install -e .[test]` |
+| Train and test one network | `python main.py` (needs images in `image_set/`, see [Data](#data); options: `--learning-rate`, `--sessions`, `--wnt-delta`, `--ccl5-delta`) |
+| Download CIFAR-10 images for `main.py` (optional, [Data](#data)) | `python scripts/fetch_cifar10.py` |
+| Re-create every figure and table of the paper (about 30 seconds) | `python reproduce.py` |
+| Re-create one figure or table | `python scripts/figures/<name>.py` (script names are in the [figure table](#reproducing-the-papers-figures-and-tables-reproducepy)) |
+| Run the tests | `pytest` |
+| Check the code style | `pip install -e .[lint]`, then `ruff check . && ruff format --check .` |
+| Rebuild the paper PDF | `pip install -e .[paper]`, then `python docs/paper/build_paper.py` |
+
+Command-line options are spelled out in full; abbreviations are rejected. `reproduce.py` and the figure scripts take the same options: `--quick`, `--retrain`, `--workers N`, `--seeds N`, `--sessions N`, `--original-images DIR` and `--no-fetch` (described [below](#reproducing-the-papers-figures-and-tables-reproducepy)).
 
 ## `main.py` or `reproduce.py`?
 
-| | `main.py` (`python -m asd_model`) | `reproduce.py` (`python -m asd_model.reproduce`) |
+| | `python main.py` | `python reproduce.py` |
 |---|---|---|
 | Purpose | Train and test **one** network and watch it learn. The simple, readable way to use the model. | Re-create **everything in the paper**: 4 conditions x 20 seeds x 2 image sets, statistics, tables, figures. |
 | Needs images | Yes, in `image_set/` ([Data](#data)) | No. It re-analyzes the finished runs shipped in `reproduce_data/`. Images are only needed with `--retrain`. |
@@ -76,18 +84,16 @@ Values used in the paper for ASD: `wnt_delta` = 0.41859 and `ccl5_delta` = 0.404
 
 ```
 src/asd_model/          The package
-  __main__.py           `python -m asd_model`: train and test one network
-  main.py               The command line behind `python -m asd_model`
+  main.py               The code run by `python main.py`: trains and tests one network
   neural_network.py     The NeuralNetwork class: layers, forward pass, backprop, training, testing
   network_tuning.py     Release maps (CCL5), sigmoid and softmax
   visual_input.py       Image loading and label encoding
   loss_outputs.py       Loss plot and spreadsheet written by main.py
-  reproduce.py          One command that re-creates every paper figure and table
+  reproduce.py          The code run by `python reproduce.py`: re-creates every paper figure and table
   experiment.py         One seeded run (condition, seed) used by reproduce.py
   paper_analysis.py     Statistics, tables and Figures 3-6, S1-S3
   model_figures.py      Figures 1 and 2 (model schematic, release-map distributions)
-main.py, reproduce.py   Root shortcuts: `python main.py` and `python reproduce.py` run the same code
-reproduce.sh, Makefile  More shortcuts (make install, make figures, make quick, make paper, make test, make lint)
+main.py, reproduce.py   The two commands you run (they start the package code above)
 scripts/figures/        One script per figure or table (fig1 ... fig6, figs1 ... figs3, tables)
 scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
 reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
@@ -95,8 +101,7 @@ figures/, tables/       Generated figures and tables (committed)
 docs/paper/             Paper (PDF and Markdown source), analysis plan, references, PDF build script
 docs/methods_to_code.md Which function implements which step of the paper's Methods
 tests/                  pytest tests (conftest.py has the fixture that writes random test images)
-pyproject.toml          Package metadata, pinned dependencies, console scripts, ruff settings
-requirements.txt        `-e .[test]`, so that `pip install -r requirements.txt` still works
+pyproject.toml          Package metadata, pinned dependencies, ruff settings
 image_set/, results/    Empty folders for your images and for main.py output
 ```
 
@@ -109,7 +114,7 @@ Install the package in editable mode from the repository root. This puts `asd_mo
 ```bash
 python3.11 -m venv venv
 source venv/bin/activate
-pip install -e .            # add [test] for pytest
+pip install -e .[test]      # [test] adds pytest; the pinned dependencies are always installed
 ```
 
 Editable mode matters: the shipped runs, figures, tables and paper live in the repository and are found relative to it. The commands that write outputs (`reproduce.py`, the figure scripts) always write to the repository's `figures/` and `tables/`, wherever you run them from. `main.py` reads `image_set/` and writes `results/` in the folder you run it from.
@@ -145,9 +150,9 @@ The paper's own image set (small web images) is not redistributed here.
 From the repository root:
 
 ```bash
-python -m asd_model                                       # control network (python main.py does the same)
-python -m asd_model --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
-python -m asd_model --learning-rate 0.1 --sessions 50                # other learning rate, fewer sessions
+python main.py                                            # control network
+python main.py --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
+python main.py --learning-rate 0.1 --sessions 50          # other learning rate, fewer sessions
 ```
 
 Command-line options: `--learning-rate` (default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
@@ -184,11 +189,10 @@ Outputs:
 
 ## Reproducing the paper's figures and tables (`reproduce.py`)
 
-**Everything at once (one command):**
+**Everything at once:**
 
-```
-pip install -e .
-python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_model.reproduce, asd-reproduce
+```bash
+python reproduce.py
 ```
 
 **One figure at a time** (each script runs alone, trains only the runs that figure needs and shares the same run cache, so you can make just one):
@@ -206,14 +210,15 @@ python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_
 | (extra) summary panels at learning rate 0.1 | `python scripts/figures/figs3_summary_lr0_1.py` | `figures/summary_lr0.1.png` |
 | Tables 1-3: all statistics | `python scripts/figures/tables.py` | `tables/statistics_*.json`, `summary_*.md`, `per_run_*.csv` |
 
-`python reproduce.py --only fig3 fig5` does the same for any subset. All scripts accept the options below. Figures 1 and 2 need no training runs at all (the schematic and the release-map histograms are drawn from the model's own constants and sampling code); Figures 3-6 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.
+`reproduce.py` and each of these scripts accept the options below. Figures 1 and 2 need no training runs at all (the schematic and the release-map histograms are drawn from the model's own constants and sampling code); Figures 3-6 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.
 
 - The repository ships the finished runs (`reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz`: 4 conditions x 20 seeds x 2 image sets each). By default the scripts therefore **re-analyze and re-plot from those runs (seconds to about 30 seconds)** and reproduce the numbers in the paper exactly.
 - `--retrain` ignores the shipped runs and retrains from scratch on the CIFAR-10 subset (downloaded automatically with `scripts/fetch_cifar10.py`, about 163 MB). Each configuration is 80 networks per image set (4 conditions x 20 seeds); the Wnt conditions take roughly 8 CPU-minutes per network and the others under a minute, so about 2-3 hours per learning rate on an 8-core machine (`--workers N`, default all cores). The authors' image set is not redistributed; to retrain on it as well pass `--original-images DIR` (folders `train_subset/` and `test_subset/` containing `trucks`, `dogs`, `cats`, `cars`). Without it the shipped runs still provide the authors'-image panels.
 - `--quick` is a smoke test (3 seeds, 20 sessions, CIFAR-10 only) writing to `figures_quick/` and `tables_quick/`.
+- `--no-fetch` stops `reproduce.py` from downloading CIFAR-10 (it fails if training needs the images).
 - `--seeds N`, `--sessions N` change the number of seeds (default 20) and sessions (default 100).
 - Seeds are fixed. On the same machine and library versions a retrained run reproduces the shipped run bit for bit. Across different numpy/BLAS builds the first training session agrees to about 1e-4 but float32 rounding differences are amplified by the training dynamics, so individual curves differ while the group statistics agree.
-- Rebuild the paper PDF with `pip install -e .[paper] && python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
+- Rebuild the paper PDF with `pip install -e .[paper]`, then `python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
 
 ## Methods-to-code map
 
@@ -222,14 +227,14 @@ python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_
 ## Tests
 
 ```bash
-python -m pytest -q        # or: make test
+pytest
 ```
 
 The tests check the model's learning rules, that a short training run writes its plot and spreadsheet, that runs are deterministic for a seed, and that the shipped runs reproduce the paper's numbers. They run on every push through GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) on Python 3.11 and 3.12 with the pinned versions, plus an informational run with the newest libraries.
 
 ## Code style
 
-The code follows PEP 8 naming (snake_case functions and variables, CapWords classes, UPPER_SNAKE constants, lowercase module names), numpy-style docstrings, double quotes and a 120-column limit. [Ruff](https://docs.astral.sh/ruff/) checks this (`pip install -e .[lint]`, then `make lint`; settings are in `pyproject.toml` and the same check runs on GitHub Actions). The modules written by hand (`main.py`, `neural_network.py`, `network_tuning.py`, `visual_input.py`, `loss_outputs.py` in `src/asd_model/`) keep their original layout and teaching comments and are skipped by `ruff format`.
+The code follows PEP 8 naming (snake_case functions and variables, CapWords classes, UPPER_SNAKE constants, lowercase module names), numpy-style docstrings, double quotes and a 120-column limit. [Ruff](https://docs.astral.sh/ruff/) checks this (`pip install -e .[lint]`, then `ruff check . && ruff format --check .`; settings are in `pyproject.toml` and the same check runs on GitHub Actions). The modules written by hand (`main.py`, `neural_network.py`, `network_tuning.py`, `visual_input.py`, `loss_outputs.py` in `src/asd_model/`) keep their original layout and teaching comments and are skipped by `ruff format`.
 
 ## Results at a glance
 
