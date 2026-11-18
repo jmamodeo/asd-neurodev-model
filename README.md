@@ -59,7 +59,7 @@ To train a single network on your own images or on CIFAR-10, see [Running one ne
 | Random seed | None (runs differ) | Fixed (reruns are identical on the same library versions) |
 | Output | Printed loss per session and accuracy, `results/<date> results/training_loss_plot.png` and `training_loss_table.xlsx` | `figures/` and `tables/` |
 | Runtime | Seconds to minutes | About 30 seconds from the shipped runs; 2-3 hours per learning rate with `--retrain` |
-| Code path | `visual_input.py`, `NeuralNetwork.py`, `network_tuning.py`, `analyze_data.py` in `src/asd_model/` | `src/asd_model/reproduce.py`, which calls `experiment.py` (runs the same `NeuralNetwork` class), `analysis.py` and `figures_model.py` |
+| Code path | `visual_input.py`, `neural_network.py`, `network_tuning.py`, `loss_outputs.py` in `src/asd_model/` | `src/asd_model/reproduce.py`, which calls `experiment.py` (runs the same `NeuralNetwork` class), `paper_analysis.py` and `model_figures.py` |
 
 ## How the model works
 
@@ -75,20 +75,20 @@ Values used in the paper for ASD: `wnt_delta` = 0.41859 and `ccl5_delta` = 0.404
 ## Repository map
 
 ```
-src/asd_model/          The package (module names are unchanged from the original scripts)
+src/asd_model/          The package
   __main__.py           `python -m asd_model`: train and test one network
   main.py               The command line behind `python -m asd_model`
-  NeuralNetwork.py      The NeuralNetwork class: layers, forward pass, backprop, training, testing
+  neural_network.py     The NeuralNetwork class: layers, forward pass, backprop, training, testing
   network_tuning.py     Release maps (CCL5), sigmoid and softmax
   visual_input.py       Image loading and label encoding
-  analyze_data.py       Loss plot and spreadsheet written by main.py
+  loss_outputs.py       Loss plot and spreadsheet written by main.py
   reproduce.py          One command that re-creates every paper figure and table
   experiment.py         One seeded run (condition, seed) used by reproduce.py
-  analysis.py           Statistics, tables and Figures 3-6, S1-S3
-  figures_model.py      Figures 1 and 2 (model schematic, release-map distributions)
+  paper_analysis.py     Statistics, tables and Figures 3-6, S1-S3
+  model_figures.py      Figures 1 and 2 (model schematic, release-map distributions)
 main.py, reproduce.py   Root shortcuts: `python main.py` and `python reproduce.py` run the same code
 reproduce.sh, Makefile  More shortcuts (make install, make figures, make quick, make paper, make test)
-scripts/figures/        One script per figure or table (fig1 ... fig6, figS1 ... figS3, tables)
+scripts/figures/        One script per figure or table (fig1 ... fig6, figs1 ... figs3, tables)
 scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
 reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
 figures/, tables/       Generated figures and tables (committed)
@@ -201,9 +201,9 @@ python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_
 | Figure 4: sessions to criterion, cumulative fraction of networks reaching the chance-level loss | `python scripts/figures/fig4_sessions_to_criterion.py` | `figures/sessions_to_criterion_lr0.03.png` |
 | Figure 5: observed vs additive effect (AUC and final loss) | `python scripts/figures/fig5_observed_vs_additive.py` | `figures/observed_vs_additive_lr0.03.png` |
 | Figure 6: final loss, sessions to chance-level loss, held-out accuracy | `python scripts/figures/fig6_summary.py` | `figures/summary_lr0.03.png` |
-| Supplementary Figure S1: loss curves at learning rate 0.1 | `python scripts/figures/figS1_loss_curves_lr0.1.py` | `figures/loss_curves_lr0.1.png` |
-| Supplementary Figure S2: observed vs additive effect at learning rate 0.1 | `python scripts/figures/figS2_observed_vs_additive_lr0.1.py` | `figures/observed_vs_additive_lr0.1.png` |
-| (extra) summary panels at learning rate 0.1 | `python scripts/figures/figS3_summary_lr0.1.py` | `figures/summary_lr0.1.png` |
+| Supplementary Figure S1: loss curves at learning rate 0.1 | `python scripts/figures/figs1_loss_curves_lr0_1.py` | `figures/loss_curves_lr0.1.png` |
+| Supplementary Figure S2: observed vs additive effect at learning rate 0.1 | `python scripts/figures/figs2_observed_vs_additive_lr0_1.py` | `figures/observed_vs_additive_lr0.1.png` |
+| (extra) summary panels at learning rate 0.1 | `python scripts/figures/figs3_summary_lr0_1.py` | `figures/summary_lr0.1.png` |
 | Tables 1-3: all statistics | `python scripts/figures/tables.py` | `tables/statistics_*.json`, `summary_*.md`, `per_run_*.csv` |
 
 `python reproduce.py --only fig3 fig5` does the same for any subset. All scripts accept the options below. Figures 1 and 2 need no training runs at all (the schematic and the release-map histograms are drawn from the model's own constants and sampling code); Figures 3-6 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.

@@ -1,7 +1,7 @@
 import numpy as np
 
 from asd_model.network_tuning import *
-from asd_model.analyze_data import *
+from asd_model.loss_outputs import *
 
 # Default learning rate. A learning rate of 0.1 makes the N(0,1)-initialised network unstable (shuffled training,
 # softmax output, release map in backprop), so 0.03 is the default (selected from a control-only pilot, see
@@ -332,7 +332,7 @@ class NeuralNetwork:
         Loss values for each session are also stored in a list with its corresponding session number
         stored in a sessions number list. The loss over time list is used in conjunction with the
         list of session numbers to plot mean loss over sessions with plot_loss_over_time(),see
-        analyze_data.py. This plot is rendered after training is complete.
+        loss_outputs.py. This plot is rendered after training is complete.
 
         The loss values for each image class are stored in a class losses list. After training on an
         image class, the associated class losses list is added to a loss table dictionary, with the

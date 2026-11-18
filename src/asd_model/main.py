@@ -2,7 +2,7 @@ import argparse
 import os
 
 from asd_model.visual_input import *
-from asd_model.NeuralNetwork import *
+from asd_model.neural_network import *
 
 # Run from the repository root with: python -m asd_model   (or python main.py; options: --lr, --sessions, --wnt-delta, --ccl5-delta)
 if __name__ == '__main__':

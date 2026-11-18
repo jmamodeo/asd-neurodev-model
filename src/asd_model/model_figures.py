@@ -7,14 +7,14 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Polygon, Circle
 
-from asd_model import experiment as ex
-from asd_model.analysis import PAGE_WIDTH   # also applies the shared font settings
+from asd_model import experiment
+from asd_model.paper_analysis import PAGE_WIDTH   # also applies the shared font settings
 from asd_model.network_tuning import get_release_maps
 
-CCL5_DELTA = ex.CONDITIONS["ccl5"][0]
-WNT_DELTA = ex.CONDITIONS["wnt"][1]
-INPUT_SIZE = ex.IMAGE_VECTOR_SIZE
-HIDDEN_LAYERS = ex.HIDDEN_LAYERS
+CCL5_DELTA = experiment.CONDITIONS["ccl5"][0]
+WNT_DELTA = experiment.CONDITIONS["wnt"][1]
+INPUT_SIZE = experiment.IMAGE_VECTOR_SIZE
+HIDDEN_LAYERS = experiment.HIDDEN_LAYERS
 CLASSES = 4
 C_CTRL, C_CCL5, C_WNT = "#444444", "#1f77b4", "#d62728"
 

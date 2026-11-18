@@ -9,7 +9,7 @@ Two engineering choices (statistically equivalent to the plain code, for speed; 
     (the same distribution as network_tuning.get_release_maps, but without a fresh Poisson draw for each of the
     up to 17.5 million synapses on every forward pass).
 Everything else (layer sizes, N(0,1) init, clipping, per-image SGD, 4 hidden layers, 900 inputs, 100 sessions)
-is as in NeuralNetwork.py.
+is as in neural_network.py.
 """
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")       # one BLAS thread per worker: deterministic and parallel-friendly
@@ -20,7 +20,7 @@ import time
 import numpy as np
 
 from asd_model.visual_input import image2matrix, encode_image_labels
-from asd_model.NeuralNetwork import NeuralNetwork
+from asd_model.neural_network import NeuralNetwork
 
 CONDITIONS = {  # name: (ccl5_delta, wnt_delta)
     "control": (0.0, 0.0),

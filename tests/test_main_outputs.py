@@ -19,7 +19,7 @@ def test_training_writes_loss_plot_and_table(tmp_path, monkeypatch):
     import matplotlib
     matplotlib.use("Agg")
     from asd_model.visual_input import image2matrix, encode_image_labels
-    from asd_model.NeuralNetwork import NeuralNetwork
+    from asd_model.neural_network import NeuralNetwork
 
     class_list = ['trucks', 'dogs', 'cats', 'cars']
     _write_images(str(tmp_path / "images"))

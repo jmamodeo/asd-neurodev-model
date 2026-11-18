@@ -19,7 +19,7 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 | One session = one pass over all images in shuffled, class-mixed order | `NeuralNetwork.run_session()` | `np.random.permutation` |
 | Training for a number of sessions; mean loss per training example | `NeuralNetwork.train()` | Default 100 sessions; learning rate 0.03 (`DEFAULT_LEARNING_RATE`) |
 | Held-out accuracy (argmax of the output vs the label) and loss | `NeuralNetwork.evaluate()`, `NeuralNetwork.test()` | Chance is 25% with four classes |
-| Loss plot and spreadsheet from `main.py` | `analyze_data.plot_loss_over_time()`, `analyze_data.export_loss_table()` | Written to `results/<date> results/` |
+| Loss plot and spreadsheet from `main.py` | `loss_outputs.plot_loss_over_time()`, `loss_outputs.export_loss_table()` | Written to `results/<date> results/` |
 
 ## The experiment and analysis
 
@@ -30,17 +30,17 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 | Two engineering choices for speed (float32; release maps drawn from a pre-generated pool) | `experiment.py` module docstring, `experiment.make_pooled_sampler()` | Same distribution as `get_release_maps()`, applied identically to every condition |
 | Image sets: the authors' images and the CIFAR-10 subset | `scripts/fetch_cifar10.py` (CIFAR-10), `--original-images DIR` in `reproduce.py` (authors' images) | The authors' images are not redistributed; the shipped runs include them |
 | Shipped finished runs | `reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz` | Written by `scripts/export_run_bundle.py` |
-| Per-run measures: AUC, final loss, sessions to half of the first loss, sessions to ln 4, held-out accuracy and loss | `analysis.per_run_table()` | `LN4` is the cross-entropy of a uniform guess over four classes |
-| Two-way ANOVA with partial eta squared | `analysis._anova()` | `statsmodels`, type II |
-| Welch t-tests against the control, Holm correction, Cohen's d with bootstrap CI | `analysis.compute_statistics()`, `_holm()`, `_cohen_d()` | |
-| Interaction checked with a permutation test within seeds | `analysis._permutation_interaction()` | |
-| Observed vs additive effect with 95% bootstrap CIs | `analysis.observed_vs_additive()` | Resamples seeds |
-| Held-out accuracy against chance (25%) | `analysis.compute_statistics()` (`R["accuracy"]`) | One-sample t-tests |
-| Tables 1-3 | `analysis.markdown_tables()`, `analysis.write_tables()` | Written to `tables/` |
-| Figures 1-6 and Supplementary Figures S1-S2 | `figures_model.py` (Figures 1 and 2), `analysis.py` (Figures 3-6, S1-S2), driven by `reproduce.py` | One script per figure in `scripts/figures/` |
+| Per-run measures: AUC, final loss, sessions to half of the first loss, sessions to ln 4, held-out accuracy and loss | `paper_analysis.per_run_table()` | `LN4` is the cross-entropy of a uniform guess over four classes |
+| Two-way ANOVA with partial eta squared | `paper_analysis._anova()` | `statsmodels`, type II |
+| Welch t-tests against the control, Holm correction, Cohen's d with bootstrap CI | `paper_analysis.compute_statistics()`, `_holm()`, `_cohen_d()` | |
+| Interaction checked with a permutation test within seeds | `paper_analysis._permutation_interaction()` | |
+| Observed vs additive effect with 95% bootstrap CIs | `paper_analysis.observed_vs_additive()` | Resamples seeds |
+| Held-out accuracy against chance (25%) | `paper_analysis.compute_statistics()` (`R["accuracy"]`) | One-sample t-tests |
+| Tables 1-3 | `paper_analysis.markdown_tables()`, `paper_analysis.write_tables()` | Written to `tables/` |
+| Figures 1-6 and Supplementary Figures S1-S2 | `model_figures.py` (Figures 1 and 2), `paper_analysis.py` (Figures 3-6, S1-S2), driven by `reproduce.py` | One script per figure in `scripts/figures/` |
 | Pre-specified analysis plan | `docs/paper/analysis_plan.md` | |
 | Numbers in the paper text | `docs/paper/build_paper.py` | Fills placeholders from `tables/` and builds `paper.pdf` |
 
 ## Checks
 
-`tests/test_corrected_training.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet and that `python -m asd_model` starts.
+`tests/test_model_learning_rules.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet and that `python -m asd_model` starts.

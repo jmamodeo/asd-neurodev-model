@@ -10,12 +10,12 @@ What it does
   2. Missing runs are trained (CIFAR-10 is downloaded automatically with scripts/fetch_cifar10.py), in parallel (--workers).
   3. Statistics, tables and figures are written to figures/ and tables/.
 
-Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figS1_..., figS2_..., figS3_... and tables.py each
+Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figs1_..., figs2_..., figs3_... and tables.py each
 build just that figure (training only the runs it needs, sharing the run cache); the same is available here as
 python reproduce.py --only fig3 fig4 ...  (fig1 and fig2 need no training runs).
 
 Useful options
-  --only NAME [NAME ...]   build only these outputs: fig1 ... fig6 figS1 figS2 figS3 tables (default: everything)
+  --only NAME [NAME ...]   build only these outputs: fig1 ... fig6 figs1 figs2 figs3 tables (default: everything)
   --retrain                ignore the distributed cache and retrain everything from scratch (hours; see README)
   --quick                  smoke test: 3 seeds, 20 sessions, CIFAR-10 only, outputs in figures_quick/ and tables_quick/
   --workers N              parallel training processes (default: number of CPU cores)
@@ -38,9 +38,7 @@ import subprocess
 import sys
 import time
 
-from asd_model import experiment as ex
-from asd_model import analysis as an
-from asd_model import figures_model as fm
+from asd_model import experiment, model_figures, paper_analysis
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repository root (src/asd_model/ is two levels down)
 
@@ -69,7 +67,7 @@ def seed_cache_from_bundle(lr, run_dir, sessions, seeds):
     for d in load_bundle(lr):
         if d["sessions"] != sessions or d["seed"] >= seeds:
             continue
-        path = ex.run_path(run_dir, d["data"], d["cond"], d["seed"])
+        path = experiment.run_path(run_dir, d["data"], d["cond"], d["seed"])
         if not os.path.exists(path):
             with open(path, "w") as f:
                 json.dump(d, f)
@@ -99,7 +97,7 @@ FIGURES = {   # name: (learning rate or None, kind); the file written is figures
     "fig1": (None, "model_schematic"), "fig2": (None, "release_map_distributions"),
     "fig3": (0.03, "loss_curves"), "fig4": (0.03, "sessions_to_criterion"),
     "fig5": (0.03, "observed_vs_additive"), "fig6": (0.03, "summary"),
-    "figS1": (0.1, "loss_curves"), "figS2": (0.1, "observed_vs_additive"), "figS3": (0.1, "summary"),
+    "figs1": (0.1, "loss_curves"), "figs2": (0.1, "observed_vs_additive"), "figs3": (0.1, "summary"),
 }
 ALL_OUTPUTS = list(FIGURES) + ["tables"]
 
@@ -118,14 +116,14 @@ def get_runs(lr, opts):
             print(f"[{tag}] loaded {n} cached runs from reproduce_data/", flush=True)
     jobs = [(name, d, cond, s, lr, opts.sessions, run_dir) for cond in ("wnt", "both", "control", "ccl5")
             for s in range(opts.seeds) for name, d in data_dirs.items()
-            if not os.path.exists(ex.run_path(run_dir, name, cond, s))]
+            if not os.path.exists(experiment.run_path(run_dir, name, cond, s))]
     if jobs:
         if not opts.no_fetch and "cifar3" in {j[0] for j in jobs}:
             ensure_cifar()
         print(f"[{tag}] training {len(jobs)} runs on {opts.workers} workers ...", flush=True)
         t0 = time.time()
         with mp.get_context("fork").Pool(opts.workers) as pool:
-            for k, path in enumerate(pool.imap_unordered(ex._job, jobs), 1):
+            for k, path in enumerate(pool.imap_unordered(experiment._job, jobs), 1):
                 print(f"  [{time.time() - t0:7.0f}s] {k}/{len(jobs)} {os.path.basename(path)}", flush=True)
     runs = collect_runs(run_dir, {"cifar3", "original"}, opts.seeds, opts.sessions, lr)
     if not runs:
@@ -149,7 +147,7 @@ def main(argv=None, only=None):
     """only: list of output names fixed by a per-figure script; otherwise --only (default: everything)."""
     ap = build_parser(__doc__)
     if only is None:
-        ap.add_argument("--only", nargs="+", choices=ALL_OUTPUTS, default=ALL_OUTPUTS)
+        ap.add_argument("--only", nargs="+", type=str.lower, choices=ALL_OUTPUTS, default=ALL_OUTPUTS)  # figS1 works too
     opts = ap.parse_args(argv)
     wanted = only if only is not None else opts.only
     opts.seeds = opts.seeds or (3 if opts.quick else 20)
@@ -162,19 +160,19 @@ def main(argv=None, only=None):
     for name in wanted:
         if name == "tables":
             for lr in lrs:
-                an.write_tables(runs_by_lr[lr], tag_for(lr, opts.quick), tab_dir)
+                paper_analysis.write_tables(runs_by_lr[lr], tag_for(lr, opts.quick), tab_dir)
                 print(f"[tables] {tag_for(lr, opts.quick)} -> {os.path.relpath(tab_dir, ROOT)}/", flush=True)
             continue
         lr, kind = FIGURES[name]
         if lr is None:                                       # model figures: no training runs needed
             os.makedirs(fig_dir, exist_ok=True)
             path = os.path.join(fig_dir, f"{kind}.png")
-            {"model_schematic": fm.figure_model_schematic, "release_map_distributions": fm.figure_release_maps}[kind](path)
+            {"model_schematic": model_figures.figure_model_schematic, "release_map_distributions": model_figures.figure_release_maps}[kind](path)
             print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
             continue
         title = f"{CONFIG_NAME.get(lr, f'lr {lr:g}')}"
-        path = an.make_figure(kind, runs_by_lr[lr], tag_for(lr, opts.quick), fig_dir, title,
-                              height=an.FIG_HEIGHT_SUPP.get(kind) if lr == 0.1 else None)
+        path = paper_analysis.make_figure(kind, runs_by_lr[lr], tag_for(lr, opts.quick), fig_dir, title,
+                              height=paper_analysis.FIG_HEIGHT_SUPP.get(kind) if lr == 0.1 else None)
         print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
     print(f"done in {time.time() - t_start:.0f}s")
 

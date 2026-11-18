@@ -2,7 +2,7 @@ import copy
 
 import numpy as np
 
-from asd_model.NeuralNetwork import NeuralNetwork
+from asd_model.neural_network import NeuralNetwork
 from asd_model.network_tuning import get_release_maps
 
 
