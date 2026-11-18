@@ -1,6 +1,6 @@
 # Methods-to-code map
 
-Where each step described in the paper's Methods (`docs/paper/paper.md`) lives in the code. Function and file names are used instead of line numbers so the map stays valid as the code is edited.
+Where each step described in the paper's Methods (`docs/paper/paper.md`) lives in the code. Function and file names are used instead of line numbers so the map stays valid as the code is edited. All modules are in `src/asd_model/` (for example `visual_input.image2matrix()` is `src/asd_model/visual_input.py`).
 
 ## The model
 
@@ -43,4 +43,4 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 
 ## Checks
 
-`tests/test_corrected_training.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet.
+`tests/test_corrected_training.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet and that `python -m asd_model` starts.

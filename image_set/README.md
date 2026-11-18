@@ -1,6 +1,6 @@
 # image_set
 
-Images are not included in this repository. `main.py` expects:
+Images are not included in this repository. `main.py` (`python -m asd_model`) expects:
 
 ```
 image_set/

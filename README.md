@@ -42,7 +42,7 @@ Needs Python 3.11 (3.12 also works with the pinned versions).
 git clone https://github.com/jmamodeo/asd-neurodev-model.git
 cd asd-neurodev-model
 python3.11 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt        # or: pip install -e .
+pip install -e .[test]                 # installs the package (src/asd_model) and the pinned dependencies
 
 python reproduce.py                    # re-creates every figure and table of the paper (about 30 seconds)
 python -m pytest -q                    # runs the tests
@@ -52,20 +52,20 @@ To train a single network on your own images or on CIFAR-10, see [Running one ne
 
 ## `main.py` or `reproduce.py`?
 
-| | `main.py` | `reproduce.py` |
+| | `main.py` (`python -m asd_model`) | `reproduce.py` (`python -m asd_model.reproduce`) |
 |---|---|---|
 | Purpose | Train and test **one** network and watch it learn. The simple, readable way to use the model. | Re-create **everything in the paper**: 4 conditions x 20 seeds x 2 image sets, statistics, tables, figures. |
 | Needs images | Yes, in `image_set/` ([Data](#data)) | No. It re-analyzes the finished runs shipped in `reproduce_data/`. Images are only needed with `--retrain`. |
 | Random seed | None (runs differ) | Fixed (reruns are identical on the same library versions) |
 | Output | Printed loss per session and accuracy, `results/<date> results/training_loss_plot.png` and `training_loss_table.xlsx` | `figures/` and `tables/` |
 | Runtime | Seconds to minutes | About 30 seconds from the shipped runs; 2-3 hours per learning rate with `--retrain` |
-| Code path | `visual_input.py`, `NeuralNetwork.py`, `network_tuning.py`, `analyze_data.py` | `reproduce.py`, which calls `experiment.py` (runs the same `NeuralNetwork` class), `analysis.py` and `figures_model.py` |
+| Code path | `visual_input.py`, `NeuralNetwork.py`, `network_tuning.py`, `analyze_data.py` in `src/asd_model/` | `src/asd_model/reproduce.py`, which calls `experiment.py` (runs the same `NeuralNetwork` class), `analysis.py` and `figures_model.py` |
 
 ## How the model works
 
-- **Input.** `visual_input.py` reads each image, converts it to grayscale, resizes it to a square whose side is `sqrt(image_vector_size)`, scales pixel values to 0-1, and flattens it into a vector of length `image_vector_size`. This vector is the input layer.
+- **Input.** `asd_model/visual_input.py` reads each image, converts it to grayscale, resizes it to a square whose side is `sqrt(image_vector_size)`, scales pixel values to 0-1, and flattens it into a vector of length `image_vector_size`. This vector is the input layer.
 - **Layer sizes.** Hidden layers start equal in size to the input layer. With `wnt_delta`, each hidden layer gains `int(previous_size * wnt_delta)` nodes over the previous layer, modeling extra synapses (more connections and redundancy). The output layer has one node per class.
-- **CCL5 / glutamate release.** For each forward pass, `network_tuning.py` draws a release map for every weight matrix from a Poisson distribution with mean `100 * (1 + ccl5_delta)`, divided by 100. The weights are multiplied by these maps, modeling stochastic glutamate release.
+- **CCL5 / glutamate release.** For each forward pass, `asd_model/network_tuning.py` draws a release map for every weight matrix from a Poisson distribution with mean `100 * (1 + ccl5_delta)`, divided by 100. The weights are multiplied by these maps, modeling stochastic glutamate release.
 - **Learning.** Hidden layers use sigmoid activations and the output layer uses a softmax; loss is cross-entropy. Gradients are clipped to a maximum norm of 1.0. Each session presents all training images once in a freshly shuffled, class-mixed order. The default learning rate is **0.03**; `--lr 0.1` selects 0.1, which makes this network unstable (see the paper's supplementary analysis).
 - **Release maps in training and testing.** The release maps multiply the weights in both the forward and the backward pass, and the same distribution is used for training and testing (`use_release_maps` defaults to `True`).
 - **Accuracy** is the highest-probability output node compared with the label, on held-out test images (chance = 25% with four classes).
@@ -75,16 +75,19 @@ Values used in the paper for ASD: `wnt_delta` = 0.41859 and `ccl5_delta` = 0.404
 ## Repository map
 
 ```
-main.py                 Train and test one network (command line)
-NeuralNetwork.py        The NeuralNetwork class: layers, forward pass, backprop, training, testing
-network_tuning.py       Release maps (CCL5), sigmoid and softmax
-visual_input.py         Image loading and label encoding
-analyze_data.py         Loss plot and spreadsheet written by main.py
-reproduce.py            One command that re-creates every paper figure and table
-experiment.py           One seeded run (condition, seed) used by reproduce.py
-analysis.py             Statistics, tables and Figures 3-6, S1-S3
-figures_model.py        Figures 1 and 2 (model schematic, release-map distributions)
-reproduce.sh, Makefile  Shortcuts for reproduce.py (also: make quick, make paper, make test)
+src/asd_model/          The package (module names are unchanged from the original scripts)
+  __main__.py           `python -m asd_model`: train and test one network
+  main.py               The command line behind `python -m asd_model`
+  NeuralNetwork.py      The NeuralNetwork class: layers, forward pass, backprop, training, testing
+  network_tuning.py     Release maps (CCL5), sigmoid and softmax
+  visual_input.py       Image loading and label encoding
+  analyze_data.py       Loss plot and spreadsheet written by main.py
+  reproduce.py          One command that re-creates every paper figure and table
+  experiment.py         One seeded run (condition, seed) used by reproduce.py
+  analysis.py           Statistics, tables and Figures 3-6, S1-S3
+  figures_model.py      Figures 1 and 2 (model schematic, release-map distributions)
+main.py, reproduce.py   Root shortcuts: `python main.py` and `python reproduce.py` run the same code
+reproduce.sh, Makefile  More shortcuts (make install, make figures, make quick, make paper, make test)
 scripts/figures/        One script per figure or table (fig1 ... fig6, figS1 ... figS3, tables)
 scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
 reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
@@ -92,19 +95,24 @@ figures/, tables/       Generated figures and tables (committed)
 docs/paper/             Paper (PDF and Markdown source), analysis plan, references, PDF build script
 docs/methods_to_code.md Which function implements which step of the paper's Methods
 tests/                  pytest tests
-requirements.txt        Pinned package versions (pyproject.toml lists the same pins)
+pyproject.toml          Package metadata, pinned dependencies, console scripts
+requirements.txt        The same pinned package versions, for `pip install -r`
 image_set/, results/    Empty folders for your images and for main.py output
 ```
 
 ## Installation
 
-Python 3.11 is the version used in the paper. `requirements.txt` pins package versions that were verified to run `main.py` and `reproduce.py` end to end on Python 3.11 (the tests also pass on 3.12). `pyproject.toml` lists the same pins, so `pip install -e .` installs the same environment; the code itself is run from the repository root and is not installed as a package. Current seaborn and pandas releases also run `main.py`, but the pinned versions are the ones the paper's results were produced with.
+Python 3.11 is the version used in the paper. The pinned package versions were verified to run `main.py` and `reproduce.py` end to end on Python 3.11 (the tests also pass on 3.12). Current seaborn and pandas releases also run `main.py`, but the pinned versions are the ones the paper's results were produced with.
+
+Install the package in editable mode from the repository root. This puts `asd_model` on the import path and installs the pinned dependencies (`pyproject.toml` and `requirements.txt` list the same versions):
 
 ```bash
 python3.11 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -e .            # add [test] for pytest
 ```
+
+Editable mode matters: the shipped runs, figures, tables and paper live in the repository and are found relative to it. The commands that write outputs (`reproduce.py`, the figure scripts) always write to the repository's `figures/` and `tables/`, wherever you run them from. `main.py` reads `image_set/` and writes `results/` in the folder you run it from.
 
 ## Data
 
@@ -137,14 +145,14 @@ The paper's own image set (small web images) is not redistributed here.
 From the repository root:
 
 ```bash
-python main.py                                       # control network
-python main.py --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
-python main.py --lr 0.1 --sessions 50                # other learning rate, fewer sessions
+python -m asd_model                                       # control network (python main.py does the same)
+python -m asd_model --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
+python -m asd_model --lr 0.1 --sessions 50                # other learning rate, fewer sessions
 ```
 
 Command-line options: `--lr` (learning rate, default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
 
-Settings edited inside `main.py`:
+Settings edited inside `src/asd_model/main.py`:
 
 | Parameter | Default | Meaning |
 |---|---|---|
@@ -179,8 +187,8 @@ Outputs:
 **Everything at once (one command):**
 
 ```
-pip install -r requirements.txt
-python reproduce.py            # or ./reproduce.sh, or: make figures
+pip install -e .
+python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_model.reproduce, asd-reproduce
 ```
 
 **One figure at a time** (each script runs alone, trains only the runs that figure needs and shares the same run cache, so you can make just one):
