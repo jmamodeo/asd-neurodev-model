@@ -1,0 +1,46 @@
+[project]
+name = "asd-neurodev-model"
+version = "0.1.0"
+description = "Python neural-network model of how elevated Wnt/mTOR-CCL5 signaling in autism spectrum disorder could slow learning in a visual image-classification network."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "John Amodeo" }, { name = "Rithvik Marri" }]
+keywords = ["neuroscience", "computational-neuroscience", "neural-network", "autism", "wnt", "mtor", "ccl5"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+]
+# Python 3.11 is the version used in the paper; 3.12 also passes the tests with these pinned versions.
+requires-python = ">=3.11,<3.13"
+# Same pins as requirements.txt (the versions verified to run main.py and reproduce.py).
+dependencies = [
+    "opencv-python==4.8.1.78",
+    "numpy==1.26.4",
+    "pandas==2.1.4",
+    "seaborn==0.12.2",
+    "matplotlib==3.8.2",
+    "openpyxl==3.1.2",
+    "scipy==1.11.4",
+    "statsmodels==0.14.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest==8.0.2"]
+paper = ["Markdown==3.11.3", "weasyprint==70.0"]  # only to rebuild docs/paper/paper.pdf
+
+[project.urls]
+Repository = "https://github.com/jmamodeo/asd-neurodev-model"
+
+# The code is run from the repository root (python main.py, python reproduce.py), so no modules are installed;
+# `pip install -e .` just installs the dependencies above.
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
