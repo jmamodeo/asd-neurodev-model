@@ -17,7 +17,7 @@ import numpy as np
 # every new line must start with its own hashtag.
 
 """
-Below is a collection of functions that we will call in out main.py file to help us
+Below is a collection of functions that we will call in our main.py file to help us
 do visual processing in our model. When a line of code starts with 'def', it is a 
 function. After 'def' comes the name of the function, which is what we will use to call
 it and its associated instructions in main.py. Look up 'functions python' online. 
@@ -29,17 +29,18 @@ def image2matrix(image_directory, class_list, vector_size):
     """
     Under every function, it is good to write a description of what it does.
     This function collects images of the specified image class from the image dir and
-    converts them to a matrix of red,green,blue values (one for each image pixel).
+    reads them as pictures, converts each to grayscale, resizes it to a square, and flattens it into a
+    single column vector of 0-1 pixel values (one value for each image pixel).
 
     Parameters
     ----------
-    image_directory
-    class_list
-    vector_size
+    image_directory : folder holding one sub-folder of images per image class
+    class_list : names of the class sub-folders to load (these become the dictionary keys)
+    vector_size : length of each image vector; images are resized to sqrt(vector_size) x sqrt(vector_size)
 
     Returns
     -------
-    image_dict
+    image_dict : dictionary of image class (key)-list of (vector_size x 1) image vectors (value) pairs
     """
 
     image_dict = {}  # Setting the 'variable' equal to an empty 'dictionary'. Look up words in '' with 'python'.
@@ -61,9 +62,9 @@ def image2matrix(image_directory, class_list, vector_size):
             gray_matrix = cv2.cvtColor(image_matrix, cv2.COLOR_BGR2GRAY)  # Converts b,g,r values to grayscale values
             resized_matrix = cv2.resize(gray_matrix, (int(vector_size**0.5), int(vector_size**0.5)))  # Resizes matrix
             normalized_matrix = resized_matrix.astype(np.float32) / 255.0
-            # Turning values into percentage of 255 so all of them are comparable, important of machine learning
+            # Turning values into percentage of 255 so all of them are comparable, important for machine learning
 
-            image_vector = normalized_matrix.flatten().reshape(-1, 1)  # Flattens matrix and shapes it as 2500x1
+            image_vector = normalized_matrix.flatten().reshape(-1, 1)  # Flattens matrix and shapes it as vector_size x 1
             vector_list.append(image_vector)  # Using the 'append' method to add the image vector to the vector list
 
         image_dict[image_class] = vector_list
@@ -100,6 +101,6 @@ def encode_image_labels(image_dict):
 
         encoded_label[index] = 1.0  # This turns the 0 at spot num in [] to 1.0; this will be different for each class
         encoded_label_dict[label] = encoded_label.reshape(-1, 1)
-        # Turing this into matrix of <image class num>x1 and storing as value with key being 'string', look up, in []
+        # Turning this into matrix of <image class num>x1 and storing as value with key being 'string', look up, in []
 
     return encoded_label_dict  # 'return' statement again

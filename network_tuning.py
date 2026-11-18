@@ -7,8 +7,9 @@ def get_release_maps(layer_weights, ccl5_delta):
     """
     This function takes the dimensions of the weight matrix for each layer
     and creates a matrix of random values with the same dimensions. The random
-    values are selected from a poisson distribution centered on the value given
-    as the ccl5 delta. A list of so-called release maps is returned.
+    values are selected from a poisson distribution whose mean is 100 * (1 + ccl5 delta),
+    divided by 100 so that the maps are centered on 1 when ccl5 delta is 0 (a ccl5 delta of 0.4
+    centers them on 1.4). A list of so-called release maps is returned.
 
     Poisson distributions have been shown to simulate the stochastic release of
     neurotransmitters by synapses. These release matrices/maps can be multiplied
@@ -36,15 +37,15 @@ def get_release_maps(layer_weights, ccl5_delta):
 
 def apply_sigmoid(layer):
     """
-    This function takes a layer of the network and applies a sigmoid funtion to the
+    This function takes a layer of the network and applies a sigmoid function to the
     values in each of its nodes. The sigmoid function puts the node value as the negative
-    exponent of Euler's number (1 / 2.718**node value), adds 1 to this, then divides the
-    result (which is between 1-2.718) out of 1. This forces each node value between 0-1
+    exponent of Euler's number (1 / 2.718**node value), adds 1 to this, then divides 1 by
+    the result (a number greater than 1). This forces each node value between 0-1
     while maintaining their relative differences. The updated layer is returned.
 
     This is important for comparing the output of the network to the encoded label of images,
     in which the image class that the image belongs to is represented as a sequence of 0s and 1s,
-    after apply a softmax function (discussed below) to the output layer.
+    after applying a softmax function (discussed below) to the output layer.
 
     Parameters
     ----------
