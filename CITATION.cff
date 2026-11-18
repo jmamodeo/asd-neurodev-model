@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this code or the accompanying paper, please cite them as below."
+type: software
+title: "ASD Neurodevelopment Model"
+abstract: >-
+  A Python neural-network model of how elevated Wnt and mTOR-activated CCL5
+  signaling in autism spectrum disorder could slow learning in a visual
+  image-classification network.
+authors:
+  - family-names: Marri
+    given-names: Rithvik
+    affiliation: American Heritage School Broward
+  - family-names: Amodeo
+    given-names: John
+    affiliation: Duke University
+repository-code: "https://github.com/jmamodeo/asd-neurodev-model"
+license: MIT
+keywords:
+  - autism spectrum disorder
+  - neural network
+  - Wnt
+  - mTOR
+  - CCL5
+  - computational neuroscience
+preferred-citation:
+  type: unpublished
+  title: "Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics"
+  authors:
+    - family-names: Marri
+      given-names: Rithvik
+      affiliation: American Heritage School Broward
+    - family-names: Amodeo
+      given-names: John
+      affiliation: Duke University
+  year: 2023
+  url: "https://github.com/jmamodeo/asd-neurodev-model/blob/main/docs/paper/paper.pdf"
