@@ -106,15 +106,19 @@ python reproduce.py            # or ./reproduce.sh, or: make figures
 
 | Paper figure | Script | Output |
 |---|---|---|
-| Figure 1: training and held-out loss curves (learning rate 0.03) | `python scripts/figures/fig1_loss_curves.py` | `figures/loss_curves_lr0.03.png` |
-| Figure 2: AUC, Wnt x CCL5 interaction plot | `python scripts/figures/fig2_auc_interaction.py` | `figures/auc_interaction_lr0.03.png` |
-| Figure 3: final loss, sessions to chance-level loss, held-out accuracy | `python scripts/figures/fig3_summary.py` | `figures/summary_lr0.03.png` |
+| Figure 1: model schematic (layer widths with and without Wnt, release maps) | `python scripts/figures/fig1_model_schematic.py` | `figures/model_schematic.png` |
+| Figure 2: release-map (synaptic gain) distributions, control vs CCL5 | `python scripts/figures/fig2_release_map_distributions.py` | `figures/release_map_distributions.png` |
+| Figure 3: training and held-out loss curves (learning rate 0.03) | `python scripts/figures/fig3_loss_curves.py` | `figures/loss_curves_lr0.03.png` |
+| Figure 4: sessions to criterion, cumulative fraction of networks reaching the chance-level loss | `python scripts/figures/fig4_sessions_to_criterion.py` | `figures/sessions_to_criterion_lr0.03.png` |
+| Figure 5: AUC, Wnt x CCL5 interaction plot | `python scripts/figures/fig5_auc_interaction.py` | `figures/auc_interaction_lr0.03.png` |
+| Figure 6: observed vs additive effect (AUC and final loss) | `python scripts/figures/fig6_observed_vs_additive.py` | `figures/observed_vs_additive_lr0.03.png` |
+| Figure 7: final loss, sessions to chance-level loss, held-out accuracy | `python scripts/figures/fig7_summary.py` | `figures/summary_lr0.03.png` |
 | Supplementary Figure S1: loss curves at learning rate 0.1 | `python scripts/figures/figS1_loss_curves_lr0.1.py` | `figures/loss_curves_lr0.1.png` |
 | Supplementary Figure S2: interaction plot at learning rate 0.1 | `python scripts/figures/figS2_auc_interaction_lr0.1.py` | `figures/auc_interaction_lr0.1.png` |
 | (extra) summary panels at learning rate 0.1 | `python scripts/figures/figS3_summary_lr0.1.py` | `figures/summary_lr0.1.png` |
 | Tables 1-3: all statistics | `python scripts/figures/tables.py` | `tables/statistics_*.json`, `summary_*.md`, `per_run_*.csv` |
 
-`python reproduce.py --only fig1 fig3` does the same for any subset. All scripts accept the options below. Figures 1-3 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.
+`python reproduce.py --only fig3 fig6` does the same for any subset. All scripts accept the options below. Figures 1 and 2 need no training runs at all (the schematic and the release-map histograms are drawn from the model's own constants and sampling code); Figures 3-7 need only the learning-rate-0.03 runs and Supplementary Figures S1-S2 only the learning-rate-0.1 runs.
 
 - The repository ships the finished runs (`reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz`: 4 conditions x 20 seeds x 2 image sets each). By default the scripts therefore **re-analyze and re-plot from those runs (seconds to about 30 seconds)** and reproduce the numbers in the paper exactly.
 - `--retrain` ignores the shipped runs and retrains from scratch on the CIFAR-10 subset (downloaded automatically with `scripts/fetch_cifar10.py`, about 163 MB). Each configuration is 80 networks per image set (4 conditions x 20 seeds); the Wnt conditions take roughly 8 CPU-minutes per network and the others under a minute, so about 2-3 hours per learning rate on an 8-core machine (`--workers N`, default all cores). The authors' image set is not redistributed; to retrain on it as well pass `--original-images DIR` (folders `train_subset/` and `test_subset/` containing `trucks`, `dogs`, `cats`, `cars`). Without it the shipped runs still provide the authors'-image panels.

@@ -152,7 +152,7 @@ def _by_key(runs):
 
 def figure_loss_curves(runs, path, title):
     by = _by_key(runs); datas = sorted({d["data"] for d in runs})
-    fig, axs = plt.subplots(2, len(datas), figsize=(6.2 * len(datas), 7.5), squeeze=False, sharex=True)
+    fig, axs = plt.subplots(2, len(datas), figsize=(4.8 * len(datas), 6.4), squeeze=False, sharex=True)
     for j, data in enumerate(datas):
         for i, (key, name) in enumerate((("train_loss", "training loss (mean per example)"), ("val_loss", "held-out loss"))):
             ax = axs[i, j]
@@ -170,7 +170,7 @@ def figure_loss_curves(runs, path, title):
 
 def figure_auc_interaction(df, stat, path, title):
     datas = sorted(df.data.unique())
-    fig, axs = plt.subplots(1, len(datas), figsize=(5.2 * len(datas), 4.4), squeeze=False)
+    fig, axs = plt.subplots(1, len(datas), figsize=(4.4 * len(datas), 3.9), squeeze=False)
     for j, data in enumerate(datas):
         ax = axs[0, j]; d = df[df.data == data]
         for ccl, ls in ((0, "-"), (1, "--")):
@@ -187,7 +187,7 @@ def figure_auc_interaction(df, stat, path, title):
 def figure_sessions_to_criterion(df, sessions, path, title):
     """Cumulative fraction of networks whose training loss has reached the chance-level loss (ln 4) by each session."""
     datas = sorted(df.data.unique())
-    fig, axs = plt.subplots(1, len(datas), figsize=(5.6 * len(datas), 4.4), squeeze=False, sharey=True)
+    fig, axs = plt.subplots(1, len(datas), figsize=(4.5 * len(datas), 4.0), squeeze=False, sharey=True)
     for j, data in enumerate(datas):
         ax = axs[0, j]
         for c in CONDS:
@@ -231,7 +231,7 @@ def observed_vs_additive(d, y, n_boot=10000, seed=0):
 def figure_observed_vs_additive(df, stat, path, title):
     datas = sorted(df.data.unique())
     outcomes = (("auc", "AUC (mean training loss)"), ("final_loss", "final training loss"))
-    fig, axs = plt.subplots(len(outcomes), len(datas), figsize=(5.8 * len(datas), 3.9 * len(outcomes)), squeeze=False)
+    fig, axs = plt.subplots(len(outcomes), len(datas), figsize=(4.5 * len(datas), 3.5 * len(outcomes)), squeeze=False)
     cats = ["control", "ccl5", "wnt", "both", "additive"]
     names = ["Control", "CCL5", "Wnt", "Wnt + CCL5\n(observed)", "Additive\nprediction"]
     for i, (y, yl) in enumerate(outcomes):
@@ -246,6 +246,7 @@ def figure_observed_vs_additive(df, stat, path, title):
             ax.axhline(E["additive"][0], color="gray", lw=.8, ls=":")
             ax.set_xticks(range(len(cats))); ax.set_xticklabels(names, fontsize=8.5); ax.set_ylabel(yl)
             ax.set_xlim(-0.5, len(cats) - 0.5)
+            lo_, hi_ = ax.get_ylim(); ax.set_ylim(lo_, hi_ + 0.3 * (hi_ - lo_))
             ia, il, ih = E["interaction"]; p = stat[data]["anova"][y]["Wnt x CCL5"]["p"]
             ax.set_title(f"{DATA_LABEL.get(data, data)}", fontsize=10)
             ax.text(0.03, 0.97, f"observed − additive = {ia:+.2f} [{il:+.2f}, {ih:+.2f}]\nWnt × CCL5 interaction (ANOVA) p = {p:.2g}",
@@ -259,7 +260,7 @@ def figure_summary(df, path, title):
     metrics = (("final_loss", "final training loss (last 10 sessions)", None),
                ("ept_abs", "sessions to reach chance-level loss (ln 4)\n(101 = never reached)", None),
                ("final_val_acc", "held-out accuracy (%)", CHANCE))
-    fig, axs = plt.subplots(len(datas), 3, figsize=(13, 3.9 * len(datas)), squeeze=False)
+    fig, axs = plt.subplots(len(datas), 3, figsize=(10.5, 3.5 * len(datas)), squeeze=False)
     for i, data in enumerate(datas):
         d = df[df.data == data]
         for j, (k, name, ref) in enumerate(metrics):

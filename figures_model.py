@@ -29,18 +29,18 @@ def layer_sizes(wnt_delta):
 
 def figure_model_schematic(path):
     rows = [("Control and CCL5", layer_sizes(0.0), C_CTRL), ("Wnt and Wnt + CCL5", layer_sizes(WNT_DELTA), C_WNT)]
-    fig, ax = plt.subplots(figsize=(11, 6.6))
-    ax.set_xlim(-0.2, 11.6); ax.set_ylim(-1.6, 8.0); ax.axis("off")
+    fig, ax = plt.subplots(figsize=(8.2, 4.8))
+    ax.set_xlim(-0.2, 11.6); ax.set_ylim(-1.3, 8.0); ax.axis("off")
     names = ["Input", "Hidden 1", "Hidden 2", "Hidden 3", "Hidden 4", "Output"]
-    notes = ["900 pixels (30 × 30)"] + ["sigmoid"] * 4 + ["4 classes, softmax"]
-    xs = np.linspace(1.4, 10.2, 6); w = 0.62
+    notes = ["30 × 30 pixels"] + ["sigmoid"] * 4 + ["4 classes, softmax"]
+    xs = np.linspace(1.4, 10.2, 6); w = 0.9
     unit = 2.1 / max(layer_sizes(WNT_DELTA)[:-1])          # height per node, same scale in both rows
     for x, n, t in zip(xs, names, notes):
         ax.text(x, 7.55, n, fontsize=10, ha="center", va="bottom", fontweight="bold")
         ax.text(x, 7.25, t, fontsize=8.5, ha="center", va="bottom", color="#555555")
     for r, (label, sizes, col) in enumerate(rows):
         yc = 5.0 - r * 3.7
-        ax.text(-0.1, yc + 1.45, label, fontsize=12, fontweight="bold", color=col, ha="left", va="center")
+        ax.text(-0.1, yc + 1.45, label, fontsize=11, fontweight="bold", color=col, ha="left", va="center")
         hts = [s * unit for s in sizes[:-1]] + [0.34]
         for i in range(5):                                   # weight matrix W_{i+1}, scaled elementwise by its release map M
             x0, x1 = xs[i] + w / 2, xs[i + 1] - w / 2
@@ -55,14 +55,8 @@ def figure_model_schematic(path):
             ax.add_patch(FancyBboxPatch((x - w / 2, yc - h / 2), w, h, boxstyle="round,pad=0,rounding_size=0.08",
                                         fc="#f4d9d9" if wide else "#dcdcdc", ec=C_WNT if wide else "#555555", lw=1.4, zorder=2))
             ax.text(x, yc, f"{s}", fontsize=10.5, ha="center", va="center", zorder=5)
-    ax.text(5.8, -0.1, "Boxes show the number of nodes; box heights are proportional to node count for the input and hidden layers "
-            "(the output layer is not to scale).\nWnt: each hidden layer has (1 + ΔWnt) times the nodes of the previous one "
-            f"(ΔWnt = {WNT_DELTA}; node counts truncated to integers).",
-            fontsize=8.5, ha="center", va="top", color="#333333")
-    ax.text(5.8, -0.95, "CCL5: every weight matrix W (all five, including the one into the output layer) is multiplied elementwise by a release map M of\n"
-            "independent Poisson(100 (1 + ΔCCL5)) / 100 draws, redrawn on every pass and used in both the forward and the backward pass\n"
-            f"(control: ΔCCL5 = 0, mean gain 1; CCL5: ΔCCL5 = {CCL5_DELTA}, mean gain {1 + CCL5_DELTA:.3f}).",
-            fontsize=8.5, ha="center", va="top", color=C_CCL5)
+    ax.text(0.0, -0.35, "×M  release map multiplying each weight matrix W elementwise (forward and backward pass)", fontsize=9, color=C_CCL5, ha="left", va="top")
+    ax.text(0.0, -0.95, f"Wnt: each hidden layer has 1 + ΔWnt = {1 + WNT_DELTA:g} times the nodes of the previous one", fontsize=9, color=C_WNT, ha="left", va="top")
     fig.savefig(path, dpi=200, bbox_inches="tight"); plt.close(fig)
 
 
@@ -74,7 +68,7 @@ def sample_release_values(delta, n=1_000_000, seed=0):
 
 
 def figure_release_maps(path):
-    fig, ax = plt.subplots(figsize=(7.4, 4.4))
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
     stats_txt = []
     for delta, col, name in ((0.0, C_CTRL, "Control (ΔCCL5 = 0)"), (CCL5_DELTA, C_CCL5, f"CCL5 (ΔCCL5 = {CCL5_DELTA})")):
         v = sample_release_values(delta)

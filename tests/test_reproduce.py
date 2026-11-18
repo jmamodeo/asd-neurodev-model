@@ -32,6 +32,14 @@ def _write_images(root, per_class=2):
 
 def test_experiment_is_deterministic_for_a_seed_and_shuffles_identically_across_conditions():
     import experiment as ex
+    saved = ex.IMAGE_VECTOR_SIZE, ex.POOL_SIZE
+    try:
+        _deterministic_check(ex)
+    finally:
+        ex.IMAGE_VECTOR_SIZE, ex.POOL_SIZE = saved
+
+
+def _deterministic_check(ex):
     with tempfile.TemporaryDirectory() as tmp:
         _write_images(tmp)
         a, b = os.path.join(tmp, "a"), os.path.join(tmp, "b")
@@ -68,3 +76,35 @@ def test_every_figure_has_a_standalone_script():
     for key in reproduce.FIGURES:
         assert any(f.startswith(key + "_") for f in scripts), key
     assert "tables.py" in scripts
+
+
+def test_schematic_layer_sizes_match_shipped_runs():
+    import reproduce
+    import figures_model as fm
+    seen = {r["cond"]: r["layer_sizes"] for r in reproduce.load_bundle(0.03)}
+    assert fm.layer_sizes(0.0) == seen["control"] == seen["ccl5"]
+    assert fm.layer_sizes(fm.WNT_DELTA) == seen["wnt"] == seen["both"] == [900, 1276, 1810, 2567, 3641, 4]
+
+
+def test_release_map_figure_statistics():
+    import numpy as np
+    import figures_model as fm
+    for delta in (0.0, fm.CCL5_DELTA):
+        v = fm.sample_release_values(delta, n=1_000_000)
+        mean = 1 + delta
+        assert abs(v.mean() - mean) < 0.002
+        assert abs(v.std() - np.sqrt(100 * mean) / 100) < 0.002
+
+
+def test_observed_vs_additive_estimates():
+    import numpy as np
+    import reproduce
+    import analysis as an
+    df = an.per_run_table([r for r in reproduce.load_bundle(0.03) if r["data"] == "cifar3"])
+    E = an.observed_vs_additive(df, "auc")
+    m = df.groupby("cond").auc.mean()
+    assert np.isclose(E["additive"][0], m["ccl5"] + m["wnt"] - m["control"])
+    assert np.isclose(E["interaction"][0], m["both"] - E["additive"][0])
+    for k, (p, lo, hi) in E.items():
+        assert lo <= p <= hi
+    assert E["interaction"][1] > 0          # the interval excludes zero (see paper)
