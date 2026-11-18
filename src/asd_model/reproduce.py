@@ -34,146 +34,221 @@ import argparse
 import glob
 import gzip
 import json
-import multiprocessing as mp
+import multiprocessing
 import subprocess
 import sys
 import time
 
 from asd_model import experiment, model_figures, paper_analysis
+from asd_model.neural_network import DEFAULT_LEARNING_RATE, DEFAULT_SESSIONS, SUPPLEMENT_LEARNING_RATE
 
-ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repository root (src/asd_model/ is two levels down)
+# repository root (src/asd_model/ is two levels down)
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 CACHE = os.path.join(ROOT, "run_cache")
 BUNDLES = os.path.join(ROOT, "reproduce_data")
 CIFAR_DIR = os.path.join(ROOT, "image_set_cifar3")
-CONFIG_NAME = {0.03: "Learning rate 0.03", 0.1: "Learning rate 0.1 (supplementary)"}
+CONFIG_NAME = {
+    DEFAULT_LEARNING_RATE: "Learning rate 0.03",
+    SUPPLEMENT_LEARNING_RATE: "Learning rate 0.1 (supplementary)",
+}
+DEFAULT_SEEDS = 20
+QUICK_SEEDS = 3
+QUICK_SESSIONS = 20
+CONDITION_TRAINING_ORDER = ("wnt", "both", "control", "ccl5")  # the slowest (widest) networks start first
+IMAGE_SET_KEYS = {"cifar3", "original"}
+CIFAR_TRAIN_PER_CLASS = 3
+CIFAR_TEST_PER_CLASS = 3
+
+# name: (learning rate or None, kind); the file written is figures/<kind>_lr<learning rate>.png
+# (figures/<kind>.png without runs)
+FIGURES = {
+    "fig1": (None, "model_schematic"),
+    "fig2": (None, "release_map_distributions"),
+    "fig3": (DEFAULT_LEARNING_RATE, "loss_curves"),
+    "fig4": (DEFAULT_LEARNING_RATE, "sessions_to_criterion"),
+    "fig5": (DEFAULT_LEARNING_RATE, "observed_vs_additive"),
+    "fig6": (DEFAULT_LEARNING_RATE, "summary"),
+    "figs1": (SUPPLEMENT_LEARNING_RATE, "loss_curves"),
+    "figs2": (SUPPLEMENT_LEARNING_RATE, "observed_vs_additive"),
+    "figs3": (SUPPLEMENT_LEARNING_RATE, "summary"),
+}
+ALL_OUTPUTS = [*FIGURES, "tables"]
+MODEL_FIGURES = {
+    "model_schematic": model_figures.figure_model_schematic,
+    "release_map_distributions": model_figures.figure_release_maps,
+}
 
 
-def tag_for(lr, quick):
-    return ("quick_" if quick else "") + f"lr{lr:g}"
+def make_tag(learning_rate, quick):
+    """Return the tag used in file and folder names, e.g. ``lr0.03`` (``quick_lr0.03`` in quick mode)."""
+    return ("quick_" if quick else "") + f"lr{learning_rate:g}"
 
 
-def load_bundle(lr):
-    path = os.path.join(BUNDLES, f"runs_lr{lr:g}.json.gz")
+def load_bundle(learning_rate):
+    """Return the runs shipped in ``reproduce_data/`` for a learning rate (an empty list if there is no bundle)."""
+    path = os.path.join(BUNDLES, f"runs_lr{learning_rate:g}.json.gz")
     if not os.path.exists(path):
         return []
     with gzip.open(path, "rt") as f:
         return json.load(f)
 
 
-def seed_cache_from_bundle(lr, run_dir, sessions, seeds):
-    n = 0
-    for d in load_bundle(lr):
-        if d["sessions"] != sessions or d["seed"] >= seeds:
+def seed_cache_from_bundle(learning_rate, run_dir, sessions, seeds):
+    """Copy the shipped runs that match the requested sessions and seeds into the run cache; return how many."""
+    n_copied = 0
+    for run in load_bundle(learning_rate):
+        if run["sessions"] != sessions or run["seed"] >= seeds:
             continue
-        path = experiment.run_path(run_dir, d["data"], d["cond"], d["seed"])
+        path = experiment.run_path(run_dir, run["data"], run["cond"], run["seed"])
         if not os.path.exists(path):
             with open(path, "w") as f:
-                json.dump(d, f)
-            n += 1
-    return n
+                json.dump(run, f)
+            n_copied += 1
+    return n_copied
 
 
 def ensure_cifar():
+    """Download the CIFAR-10 image subset (once) if it is not there yet."""
     if os.path.isdir(os.path.join(CIFAR_DIR, "train_subset")) and os.path.isdir(os.path.join(CIFAR_DIR, "test_subset")):
         return
     print("Fetching CIFAR-10 (about 163 MB, cached in .cache/) ...", flush=True)
-    subprocess.check_call([sys.executable, os.path.join(ROOT, "scripts", "fetch_cifar10.py"), "--train-per-class", "3",
-                           "--test-per-class", "3", "--out", CIFAR_DIR])
+    subprocess.check_call(
+        [
+            sys.executable,
+            os.path.join(ROOT, "scripts", "fetch_cifar10.py"),
+            "--train-per-class",
+            str(CIFAR_TRAIN_PER_CLASS),
+            "--test-per-class",
+            str(CIFAR_TEST_PER_CLASS),
+            "--out",
+            CIFAR_DIR,
+        ]
+    )
 
 
-def collect_runs(run_dir, datasets, seeds, sessions, lr):
+def collect_runs(run_dir, image_sets, seeds, sessions, learning_rate):
+    """Load the cached runs of one configuration (the requested image sets, seeds, sessions and learning rate)."""
     runs = []
     for path in sorted(glob.glob(os.path.join(run_dir, "*.json"))):
         with open(path) as f:
-            d = json.load(f)
-        if d["data"] in datasets and d["seed"] < seeds and d["sessions"] == sessions and abs(d.get("lr", lr) - lr) < 1e-12:
-            runs.append(d)
+            run = json.load(f)
+        if (
+            run["data"] in image_sets
+            and run["seed"] < seeds
+            and run["sessions"] == sessions
+            and abs(run.get("lr", learning_rate) - learning_rate) < 1e-12
+        ):
+            runs.append(run)
     return runs
 
 
-FIGURES = {   # name: (learning rate or None, kind); the file written is figures/<kind>_lr<lr>.png (figures/<kind>.png without runs)
-    "fig1": (None, "model_schematic"), "fig2": (None, "release_map_distributions"),
-    "fig3": (0.03, "loss_curves"), "fig4": (0.03, "sessions_to_criterion"),
-    "fig5": (0.03, "observed_vs_additive"), "fig6": (0.03, "summary"),
-    "figs1": (0.1, "loss_curves"), "figs2": (0.1, "observed_vs_additive"), "figs3": (0.1, "summary"),
-}
-ALL_OUTPUTS = list(FIGURES) + ["tables"]
-
-
-def get_runs(lr, opts):
+def get_runs(learning_rate, options):
     """Return the runs of one learning-rate configuration, training whatever is missing (cache first)."""
-    tag = tag_for(lr, opts.quick)
-    run_dir = os.path.join(CACHE, tag + (f"_s{opts.sessions}_n{opts.seeds}" if (opts.quick or opts.sessions != 100 or opts.seeds != 20) else ""))
+    tag = make_tag(learning_rate, options.quick)
+    custom_size = options.quick or options.sessions != DEFAULT_SESSIONS or options.seeds != DEFAULT_SEEDS
+    run_dir = os.path.join(CACHE, tag + (f"_s{options.sessions}_n{options.seeds}" if custom_size else ""))
     os.makedirs(run_dir, exist_ok=True)
     data_dirs = {"cifar3": CIFAR_DIR}
-    if opts.original_images and not opts.quick:
-        data_dirs["original"] = os.path.abspath(opts.original_images)
-    if not opts.quick and not opts.retrain:
-        n = seed_cache_from_bundle(lr, run_dir, opts.sessions, opts.seeds)
-        if n:
-            print(f"[{tag}] loaded {n} cached runs from reproduce_data/", flush=True)
-    jobs = [(name, d, cond, s, lr, opts.sessions, run_dir) for cond in ("wnt", "both", "control", "ccl5")
-            for s in range(opts.seeds) for name, d in data_dirs.items()
-            if not os.path.exists(experiment.run_path(run_dir, name, cond, s))]
+    if options.original_images and not options.quick:
+        data_dirs["original"] = os.path.abspath(options.original_images)
+    if not options.quick and not options.retrain:
+        n_loaded = seed_cache_from_bundle(learning_rate, run_dir, options.sessions, options.seeds)
+        if n_loaded:
+            print(f"[{tag}] loaded {n_loaded} cached runs from reproduce_data/", flush=True)
+    jobs = [
+        (image_set, image_dir, condition, seed, learning_rate, options.sessions, run_dir)
+        for condition in CONDITION_TRAINING_ORDER
+        for seed in range(options.seeds)
+        for image_set, image_dir in data_dirs.items()
+        if not os.path.exists(experiment.run_path(run_dir, image_set, condition, seed))
+    ]
     if jobs:
-        if not opts.no_fetch and "cifar3" in {j[0] for j in jobs}:
+        if not options.no_fetch and "cifar3" in {job[0] for job in jobs}:
             ensure_cifar()
-        print(f"[{tag}] training {len(jobs)} runs on {opts.workers} workers ...", flush=True)
-        t0 = time.time()
-        with mp.get_context("fork").Pool(opts.workers) as pool:
-            for k, path in enumerate(pool.imap_unordered(experiment._job, jobs), 1):
-                print(f"  [{time.time() - t0:7.0f}s] {k}/{len(jobs)} {os.path.basename(path)}", flush=True)
-    runs = collect_runs(run_dir, {"cifar3", "original"}, opts.seeds, opts.sessions, lr)
+        print(f"[{tag}] training {len(jobs)} runs on {options.workers} workers ...", flush=True)
+        start_time = time.time()
+        with multiprocessing.get_context("fork").Pool(options.workers) as pool:
+            for k, path in enumerate(pool.imap_unordered(experiment.run_job, jobs), 1):
+                print(f"  [{time.time() - start_time:7.0f}s] {k}/{len(jobs)} {os.path.basename(path)}", flush=True)
+    runs = collect_runs(run_dir, IMAGE_SET_KEYS, options.seeds, options.sessions, learning_rate)
     if not runs:
         sys.exit(f"[{tag}] no runs available")
     return runs
 
 
-def build_parser(prog_doc):
-    ap = argparse.ArgumentParser(description=prog_doc, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--quick", action="store_true")
-    ap.add_argument("--retrain", action="store_true")
-    ap.add_argument("--workers", type=int, default=os.cpu_count() or 1)
-    ap.add_argument("--seeds", type=int, default=None)
-    ap.add_argument("--sessions", type=int, default=None)
-    ap.add_argument("--original-images", default=None)
-    ap.add_argument("--no-fetch", action="store_true", help="do not download CIFAR-10 (fail if training needs it)")
-    return ap
+def build_parser(description):
+    """Return the command-line parser (shared by ``reproduce.py`` and the per-figure scripts)."""
+    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--quick", action="store_true")
+    parser.add_argument("--retrain", action="store_true")
+    parser.add_argument("--workers", type=int, default=os.cpu_count() or 1)
+    parser.add_argument("--seeds", type=int, default=None)
+    parser.add_argument("--sessions", type=int, default=None)
+    parser.add_argument("--original-images", default=None)
+    parser.add_argument("--no-fetch", action="store_true", help="do not download CIFAR-10 (fail if training needs it)")
+    return parser
 
 
 def main(argv=None, only=None):
-    """only: list of output names fixed by a per-figure script; otherwise --only (default: everything)."""
-    ap = build_parser(__doc__)
+    """Re-create the requested figures and tables (everything by default).
+
+    Parameters
+    ----------
+    argv : list of str, optional
+        Command-line arguments (default: ``sys.argv``).
+    only : list of str, optional
+        Output names fixed by a per-figure script; if None, ``--only`` is used (default: everything).
+    """
+    parser = build_parser(__doc__)
     if only is None:
-        ap.add_argument("--only", nargs="+", type=str.lower, choices=ALL_OUTPUTS, default=ALL_OUTPUTS)  # figS1 works too
-    opts = ap.parse_args(argv)
-    wanted = only if only is not None else opts.only
-    opts.seeds = opts.seeds or (3 if opts.quick else 20)
-    opts.sessions = opts.sessions or (20 if opts.quick else 100)
-    fig_dir = os.path.join(ROOT, "figures_quick" if opts.quick else "figures")
-    tab_dir = os.path.join(ROOT, "tables_quick" if opts.quick else "tables")
-    t_start = time.time()
-    lrs = sorted({FIGURES[w][0] for w in wanted if w in FIGURES and FIGURES[w][0] is not None} | ({0.03, 0.1} if "tables" in wanted else set()), reverse=True)
-    runs_by_lr = {lr: get_runs(lr, opts) for lr in lrs}       # only the configurations the requested outputs need
+        parser.add_argument(
+            "--only",
+            nargs="+",
+            type=str.lower,  # figS1 works too
+            choices=ALL_OUTPUTS,
+            default=ALL_OUTPUTS,
+        )
+    options = parser.parse_args(argv)
+    wanted = only if only is not None else options.only
+    options.seeds = options.seeds or (QUICK_SEEDS if options.quick else DEFAULT_SEEDS)
+    options.sessions = options.sessions or (QUICK_SESSIONS if options.quick else DEFAULT_SESSIONS)
+    figure_dir = os.path.join(ROOT, "figures_quick" if options.quick else "figures")
+    table_dir = os.path.join(ROOT, "tables_quick" if options.quick else "tables")
+    start_time = time.time()
+    # only the configurations the requested outputs need
+    learning_rates = {FIGURES[name][0] for name in wanted if name in FIGURES and FIGURES[name][0] is not None}
+    if "tables" in wanted:
+        learning_rates |= {DEFAULT_LEARNING_RATE, SUPPLEMENT_LEARNING_RATE}
+    learning_rates = sorted(learning_rates, reverse=True)
+    runs_by_learning_rate = {rate: get_runs(rate, options) for rate in learning_rates}
     for name in wanted:
         if name == "tables":
-            for lr in lrs:
-                paper_analysis.write_tables(runs_by_lr[lr], tag_for(lr, opts.quick), tab_dir)
-                print(f"[tables] {tag_for(lr, opts.quick)} -> {os.path.relpath(tab_dir, ROOT)}/", flush=True)
+            for rate in learning_rates:
+                tag = make_tag(rate, options.quick)
+                paper_analysis.write_tables(runs_by_learning_rate[rate], tag, table_dir)
+                print(f"[tables] {tag} -> {os.path.relpath(table_dir, ROOT)}/", flush=True)
             continue
-        lr, kind = FIGURES[name]
-        if lr is None:                                       # model figures: no training runs needed
-            os.makedirs(fig_dir, exist_ok=True)
-            path = os.path.join(fig_dir, f"{kind}.png")
-            {"model_schematic": model_figures.figure_model_schematic, "release_map_distributions": model_figures.figure_release_maps}[kind](path)
+        learning_rate, kind = FIGURES[name]
+        if learning_rate is None:  # model figures: no training runs needed
+            os.makedirs(figure_dir, exist_ok=True)
+            path = os.path.join(figure_dir, f"{kind}.png")
+            MODEL_FIGURES[kind](path)
             print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
             continue
-        title = f"{CONFIG_NAME.get(lr, f'lr {lr:g}')}"
-        path = paper_analysis.make_figure(kind, runs_by_lr[lr], tag_for(lr, opts.quick), fig_dir, title,
-                              height=paper_analysis.SUPPLEMENT_FIGURE_HEIGHTS.get(kind) if lr == 0.1 else None)
+        title = f"{CONFIG_NAME.get(learning_rate, f'lr {learning_rate:g}')}"
+        is_supplement = learning_rate == SUPPLEMENT_LEARNING_RATE
+        height = paper_analysis.SUPPLEMENT_FIGURE_HEIGHTS.get(kind) if is_supplement else None
+        path = paper_analysis.make_figure(
+            kind,
+            runs_by_learning_rate[learning_rate],
+            make_tag(learning_rate, options.quick),
+            figure_dir,
+            title,
+            height=height,
+        )
         print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
-    print(f"done in {time.time() - t_start:.0f}s")
+    print(f"done in {time.time() - start_time:.0f}s")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,11 @@
 import numpy as np
 
+# Poisson draws are divided by this so that a release map is centered on 1 when ccl5_delta is 0
+POISSON_MEAN_SCALE = 100
+
+
 # Below are non-class-specific functions used for neural network training, testing, and bio simulation.
+
 
 def get_release_maps(layer_weights, ccl5_delta):
     """
@@ -25,11 +30,11 @@ def get_release_maps(layer_weights, ccl5_delta):
     release_maps
     """
 
-    synaptic_potential = 100 * (1 + ccl5_delta)
+    synaptic_potential = POISSON_MEAN_SCALE * (1 + ccl5_delta)
 
     release_maps = []
     for weights in layer_weights:
-        release_map = np.random.poisson(synaptic_potential, size=(weights.shape[0], weights.shape[1])) / 100
+        release_map = np.random.poisson(synaptic_potential, size=(weights.shape[0], weights.shape[1])) / POISSON_MEAN_SCALE
         release_maps.append(release_map)
     return release_maps
 

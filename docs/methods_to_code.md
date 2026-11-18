@@ -26,7 +26,7 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 | Paper (Methods and Results) | Code | Notes |
 |---|---|---|
 | 2 x 2 design: control, CCL5, Wnt, Wnt + CCL5 | `experiment.CONDITIONS` | |
-| 20 independently seeded networks per condition and image set, same seeds in all conditions | `experiment.run_one()`, `reproduce.collect_runs()` | `np.random.seed(seed)` sets the initial weights, shuffle order and release maps |
+| 20 independently seeded networks per condition and image set, same seeds in all conditions | `experiment.run_experiment()`, `reproduce.collect_runs()` | `np.random.seed(seed)` sets the initial weights, shuffle order and release maps |
 | Two engineering choices for speed (float32; release maps drawn from a pre-generated pool) | `experiment.py` module docstring, `experiment.make_pooled_sampler()` | Same distribution as `get_release_maps()`, applied identically to every condition |
 | Image sets: the authors' images and the CIFAR-10 subset | `scripts/fetch_cifar10.py` (CIFAR-10), `--original-images DIR` in `reproduce.py` (authors' images) | The authors' images are not redistributed; the shipped runs include them |
 | Shipped finished runs | `reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz` | Written by `scripts/export_run_bundle.py` |

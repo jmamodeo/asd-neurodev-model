@@ -13,10 +13,9 @@ from matplotlib.patches import Circle, FancyBboxPatch, Polygon  # noqa: E402
 
 from asd_model import experiment  # noqa: E402
 from asd_model.network_tuning import get_release_maps  # noqa: E402
+from asd_model.neural_network import ASD_CCL5_DELTA, ASD_WNT_DELTA  # noqa: E402
 from asd_model.paper_analysis import PAGE_WIDTH  # noqa: E402  (importing it also applies the shared font settings)
 
-CCL5_DELTA = experiment.CONDITIONS["ccl5"][0]
-WNT_DELTA = experiment.CONDITIONS["wnt"][1]
 CONTROL_COLOR, CCL5_COLOR, WNT_COLOR = "#444444", "#1f77b4", "#d62728"
 SCHEMATIC_HEIGHTS = {"model_schematic": 4.3, "release_map_distributions": 3.9}  # inches
 
@@ -26,14 +25,14 @@ def layer_sizes(wnt_delta):
     sizes = [experiment.IMAGE_VECTOR_SIZE]
     for _ in range(experiment.HIDDEN_LAYERS):
         sizes.append(sizes[-1] + int(sizes[-1] * wnt_delta))
-    return sizes + [len(experiment.CLASS_LIST)]
+    return sizes + [len(experiment.CLASS_NAMES)]
 
 
 def figure_model_schematic(path, height=None):
     """Draw the network schematic (layer sizes with and without the Wnt increase, release maps on every matrix)."""
     rows = [
         ("Control and CCL5", layer_sizes(0.0), CONTROL_COLOR),
-        ("Wnt and Wnt + CCL5", layer_sizes(WNT_DELTA), WNT_COLOR),
+        ("Wnt and Wnt + CCL5", layer_sizes(ASD_WNT_DELTA), WNT_COLOR),
     ]
     fig, ax = plt.subplots(figsize=(PAGE_WIDTH, height or SCHEMATIC_HEIGHTS["model_schematic"]))
     ax.set_xlim(-0.2, 11.6)
@@ -43,7 +42,7 @@ def figure_model_schematic(path, height=None):
     notes = ["30 × 30 pixels"] + ["sigmoid"] * 4 + ["4 classes, softmax"]
     x_positions = np.linspace(1.4, 10.2, 6)
     box_width = 0.9
-    unit = 2.1 / max(layer_sizes(WNT_DELTA)[:-1])  # height per node, same scale in both rows
+    unit = 2.1 / max(layer_sizes(ASD_WNT_DELTA)[:-1])  # height per node, same scale in both rows
     for x, name, note in zip(x_positions, names, notes, strict=True):
         ax.text(x, 7.55, name, fontsize=8.5, ha="center", va="bottom", fontweight="bold")
         ax.text(x, 7.25, note, fontsize=8, ha="center", va="bottom", color="#555555")
@@ -110,7 +109,7 @@ def figure_model_schematic(path, height=None):
     ax.text(
         0.0,
         -0.95,
-        f"Wnt: each hidden layer has 1 + ΔWnt = {1 + WNT_DELTA:g} times the nodes of the previous one",
+        f"Wnt: each hidden layer has 1 + ΔWnt = {1 + ASD_WNT_DELTA:g} times the nodes of the previous one",
         fontsize=8,
         color=WNT_COLOR,
         ha="left",
@@ -134,7 +133,7 @@ def figure_release_maps(path, height=None):
     statistics_text = []
     conditions = (
         (0.0, CONTROL_COLOR, "Control (ΔCCL5 = 0)"),
-        (CCL5_DELTA, CCL5_COLOR, f"CCL5 (ΔCCL5 = {CCL5_DELTA})"),
+        (ASD_CCL5_DELTA, CCL5_COLOR, f"CCL5 (ΔCCL5 = {ASD_CCL5_DELTA})"),
     )
     for delta, color, name in conditions:
         values = sample_release_values(delta)
