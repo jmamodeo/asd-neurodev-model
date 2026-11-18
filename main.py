@@ -1,17 +1,19 @@
 #!/usr/bin/env python
-"""Shortcut for `python -m asd_model`: trains and tests one network.
+"""Trains and tests one network (the one way to run the model).
 
-Options: --learning-rate, --sessions, --wnt-delta, --ccl5-delta.
+    python main.py [--learning-rate X] [--sessions N] [--wnt-delta X] [--ccl5-delta X]
 
-Needs the package installed once from the repository root: pip install -e .
+Needs the package installed once from the repository root: pip install -e .[test]
 """
 
+import runpy
+
 try:
-    from asd_model.__main__ import main
+    import asd_model.main  # noqa: F401  (checks that the package is installed)
 except ModuleNotFoundError as error:
     if error.name != "asd_model":
         raise
-    raise SystemExit("asd_model is not installed. From the repository root run: pip install -e .") from error
+    raise SystemExit("asd_model is not installed. From the repository root run: pip install -e .[test]") from error
 
 if __name__ == "__main__":
-    main()
+    runpy.run_module("asd_model.main", run_name="__main__")

@@ -1,4 +1,4 @@
-"""Train and test one network from the command line (python -m asd_model, see --help)."""
+"""Train and test one network from the command line (python main.py in the repository root, see --help)."""
 
 import argparse
 import os
@@ -13,11 +13,13 @@ from asd_model.neural_network import (
 )
 from asd_model.visual_input import encode_image_labels, image_to_matrix
 
-# Run from the repository root with: python -m asd_model   (or python main.py)
+# Run from the repository root with: python main.py
 # Options: --learning-rate, --sessions, --wnt-delta, --ccl5-delta
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Train and test the ASD Wnt/CCL5 neural network model.")
+    parser = argparse.ArgumentParser(
+        description="Train and test the ASD Wnt/CCL5 neural network model.", allow_abbrev=False
+    )
     parser.add_argument("--learning-rate", type=float, default=DEFAULT_LEARNING_RATE,
                         help="learning rate (default 0.03; 0.1 makes the network unstable, see the paper supplement)")
     parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS,

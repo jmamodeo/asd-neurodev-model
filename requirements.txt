@@ -1,4 +1,0 @@
-# pyproject.toml is the single source of the pinned versions (verified to run the model and reproduce.py on Python 3.11 and 3.12).
-# `pip install -r requirements.txt` is the same as `pip install -e .[test]`.
-# seaborn >= 0.13 and pandas >= 3 are not the versions the paper's results were produced with.
--e .[test]

@@ -1,6 +1,6 @@
 """Reproduce every figure and table of the paper with one command.
 
-    python reproduce.py   # or ./reproduce.sh, `make figures`, `python -m asd_model.reproduce`, or `asd-reproduce`
+    python reproduce.py   # in the repository root
 
 What it does
   1. For each learning-rate configuration (main = 0.03, supplementary = 0.1) it needs 4 conditions x 20 seeds per
@@ -11,12 +11,11 @@ What it does
      (--workers).
   3. Statistics, tables and figures are written to figures/ and tables/.
 
-Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figs1_..., figs2_..., figs3_...
-and tables.py each build just that figure (training only the runs it needs, sharing the run cache). The same is
-available here with `python reproduce.py --only fig3 fig4 ...` (fig1 and fig2 need no training runs).
+One figure at a time: python scripts/figures/<name>.py (fig1_model_schematic.py ... fig6_summary.py, figs1_...,
+figs2_..., figs3_... and tables.py). Each builds just that output, training only the runs it needs and sharing the run
+cache; they call main(only=[...]) below and accept the options listed here (fig1 and fig2 need no training runs).
 
 Useful options
-  --only NAME [NAME ...]   build only these outputs: fig1 ... fig6 figs1 figs2 figs3 tables (default: everything)
   --retrain                ignore the distributed cache and retrain everything from scratch (hours; see README)
   --quick                  smoke test: 3 seeds, 20 sessions, CIFAR-10 only, outputs in figures_quick/ and tables_quick/
   --workers N              parallel training processes (default: number of CPU cores)
@@ -181,7 +180,9 @@ def get_runs(learning_rate, options):
 
 def build_parser(description):
     """Return the command-line parser (shared by ``reproduce.py`` and the per-figure scripts)."""
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=description, formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False
+    )
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--retrain", action="store_true")
     parser.add_argument("--workers", type=int, default=os.cpu_count() or 1)
@@ -200,19 +201,11 @@ def main(argv=None, only=None):
     argv : list of str, optional
         Command-line arguments (default: ``sys.argv``).
     only : list of str, optional
-        Output names fixed by a per-figure script; if None, ``--only`` is used (default: everything).
+        Output names fixed by a per-figure script (keys of ``FIGURES`` or ``"tables"``); if None, everything.
     """
     parser = build_parser(__doc__)
-    if only is None:
-        parser.add_argument(
-            "--only",
-            nargs="+",
-            type=str.lower,  # figS1 works too
-            choices=ALL_OUTPUTS,
-            default=ALL_OUTPUTS,
-        )
     options = parser.parse_args(argv)
-    wanted = only if only is not None else options.only
+    wanted = ALL_OUTPUTS if only is None else only
     options.seeds = options.seeds or (QUICK_SEEDS if options.quick else DEFAULT_SEEDS)
     options.sessions = options.sessions or (QUICK_SESSIONS if options.quick else DEFAULT_SESSIONS)
     figure_dir = os.path.join(ROOT, "figures_quick" if options.quick else "figures")
@@ -251,7 +244,3 @@ def main(argv=None, only=None):
         )
         print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
     print(f"done in {time.time() - start_time:.0f}s")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,5 +1,6 @@
 """Tests for the main.py outputs (training-loss plot and Excel table); also guards against seaborn/pandas changes."""
 
+import pathlib
 import subprocess
 import sys
 
@@ -48,14 +49,20 @@ def test_loss_plot_and_table_are_written_to_one_results_folder(tmp_path, monkeyp
     assert sorted(p.name for p in out[0].iterdir()) == ["training_loss_plot.png", "training_loss_table.xlsx"]
 
 
-def test_module_entry_point_runs():
-    """`python -m asd_model --help` starts the main.py command line."""
-    result = subprocess.run([sys.executable, "-m", "asd_model", "--help"], capture_output=True, text=True)
+def _run_main(*arguments):
+    root = pathlib.Path(__file__).resolve().parents[1]
+    return subprocess.run([sys.executable, "main.py", *arguments], capture_output=True, text=True, cwd=root)
+
+
+def test_main_py_is_the_command_line():
+    """`python main.py --help` lists the options; `--learning-rate` is the only spelling for the learning rate."""
+    result = _run_main("--help")
     assert result.returncode == 0 and "--wnt-delta" in result.stdout
     assert "--learning-rate" in result.stdout and "--lr " not in result.stdout
 
 
-def test_learning_rate_has_no_short_alias():
-    """`--learning-rate` is the only spelling; the old `--lr` alias is rejected."""
-    result = subprocess.run([sys.executable, "-m", "asd_model", "--lr", "0.03"], capture_output=True, text=True)
-    assert result.returncode != 0 and "unrecognized arguments: --lr" in result.stderr
+def test_main_py_rejects_old_and_abbreviated_flags():
+    """Only the full flag names are accepted: no `--lr` alias and no abbreviations such as `--learning`."""
+    for flag in ("--lr", "--learning", "--sess"):
+        result = _run_main(flag, "1")
+        assert result.returncode == 2 and f"unrecognized arguments: {flag}" in result.stderr, flag

@@ -56,7 +56,7 @@ def write_split(batch, split, per_class, out):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--train-per-class", type=int, default=25)
     parser.add_argument("--test-per-class", type=int, default=10)
     parser.add_argument("--out", default="image_set")

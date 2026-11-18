@@ -4,12 +4,15 @@ import gzip
 import inspect
 import json
 import os
+import pathlib
 
 import numpy as np
+import pytest
 
 from asd_model import experiment, model_figures, neural_network, paper_analysis, reproduce
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_PATH = pathlib.Path(ROOT)
 
 
 def test_default_learning_rate_is_0_03_and_supplement_selectable():
@@ -92,3 +95,20 @@ def test_observed_vs_additive_estimates():
     for estimate, lower, upper in effects.values():
         assert lower <= estimate <= upper
     assert effects["interaction"][1] > 0  # the interval excludes zero (see paper)
+
+
+def test_reproduce_has_one_command_line_without_only_or_abbreviations():
+    """`--only` and abbreviated flags are gone; a single figure is built by its script in scripts/figures/."""
+    for flag in ("--only", "--quic", "--retr"):
+        with pytest.raises(SystemExit) as error:
+            reproduce.main([flag])
+        assert error.value.code == 2, flag
+
+
+def test_one_way_to_run_each_task():
+    """The only entry points are the root `main.py`, the root `reproduce.py` and the per-figure scripts."""
+    assert (ROOT_PATH / "main.py").is_file() and (ROOT_PATH / "reproduce.py").is_file()
+    for removed in ("Makefile", "reproduce.sh", "requirements.txt", "src/asd_model/__main__.py"):
+        assert not (ROOT_PATH / removed).exists(), removed
+    assert "[project.scripts]" not in (ROOT_PATH / "pyproject.toml").read_text()
+    assert "__main__" not in inspect.getsource(reproduce)
