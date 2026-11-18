@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from asd_model.network_tuning import get_release_maps
-from asd_model.neural_network import LOG_EPSILON, NeuralNetwork
+from asd_model.neural_network import ASD_CCL5_DELTA, LOG_EPSILON, NeuralNetwork
 
 
 def make_net(n_in=5, hidden=2, classes=("a", "b", "c"), ccl5_delta=0.0):
@@ -80,12 +80,12 @@ def test_ccl5_release_map_statistics():
     np.random.seed(0)
     w = [np.zeros((300, 300))]
     cvs = {}
-    for delta in (0.0, 0.40467):
+    for delta in (0.0, ASD_CCL5_DELTA):
         m = get_release_maps(w, delta)[0]
         assert abs(m.mean() - (1 + delta)) < 0.01
         cvs[delta] = m.std() / m.mean()
         assert abs(cvs[delta] - 1 / np.sqrt(100 * (1 + delta))) < 0.005
-    assert cvs[0.40467] < cvs[0.0]
+    assert cvs[ASD_CCL5_DELTA] < cvs[0.0]
 
 
 def _two_class_data():
@@ -118,7 +118,7 @@ def test_softmax_output():
 
 
 def test_train_and_test_same_release_distribution():
-    net = make_net(ccl5_delta=0.40467)
+    net = make_net(ccl5_delta=ASD_CCL5_DELTA)
     np.random.seed(5)
     net.feedforward(np.random.rand(5, 1))  # default must use release maps
     maps = np.concatenate([m.ravel() for m in net.last_release_maps])

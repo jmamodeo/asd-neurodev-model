@@ -7,7 +7,7 @@ import matplotlib
 import numpy as np
 
 from asd_model.loss_outputs import export_loss_table, make_results_directory, plot_loss_over_time
-from asd_model.neural_network import NeuralNetwork, TrainingHistory
+from asd_model.neural_network import ASD_CCL5_DELTA, ASD_WNT_DELTA, NeuralNetwork, TrainingHistory
 from asd_model.visual_input import encode_image_labels, image_to_matrix
 
 matplotlib.use("Agg")
@@ -20,7 +20,7 @@ def _train_short_run(tmp_path, write_class_images):
     images = image_to_matrix(str(tmp_path / "images"), CLASS_LIST, 100)
     labels = encode_image_labels(images)
     np.random.seed(0)
-    net = NeuralNetwork(CLASS_LIST, 100, hidden_layer_number=2, ccl5_delta=0.40467, wnt_delta=0.41859)
+    net = NeuralNetwork(CLASS_LIST, 100, hidden_layer_number=2, ccl5_delta=ASD_CCL5_DELTA, wnt_delta=ASD_WNT_DELTA)
     return net.train(images, labels, learning_rate=0.03, sessions=3)
 
 
