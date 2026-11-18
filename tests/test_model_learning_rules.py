@@ -47,8 +47,9 @@ def test_gradient_includes_release_map_finite_difference():
 
     eps = 1e-6
     for params_before, params_after, name in (
-            (net.layer_weights, trained.layer_weights, "w"),
-            (net.layer_biases, trained.layer_biases, "b")):
+        (net.layer_weights, trained.layer_weights, "w"),
+        (net.layer_biases, trained.layer_biases, "b"),
+    ):
         for k, p in enumerate(params_before):
             analytic = -(params_after[k] - p)
             numeric = np.zeros_like(p)
@@ -123,4 +124,5 @@ def test_train_and_test_same_release_distribution():
     maps = np.concatenate([m.ravel() for m in net.last_release_maps])
     assert abs(maps.mean() - 1.40467) < 0.02
     import inspect
+
     assert inspect.signature(net.test).parameters["use_release_maps"].default is True

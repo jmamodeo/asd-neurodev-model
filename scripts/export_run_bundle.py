@@ -1,7 +1,8 @@
 """Developer helper: pack a directory of per-run JSON files into reproduce_data/runs_lr<lr>.json.gz.
 
-    python scripts/export_run_bundle.py run_cache/lr0.03 0.03
+python scripts/export_run_bundle.py run_cache/lr0.03 0.03
 """
+
 import glob
 import gzip
 import json

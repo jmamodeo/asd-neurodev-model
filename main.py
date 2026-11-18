@@ -1,7 +1,11 @@
-"""Shortcut for `python -m asd_model`: trains and tests one network (options: --lr, --sessions, --wnt-delta, --ccl5-delta).
+#!/usr/bin/env python
+"""Shortcut for `python -m asd_model`: trains and tests one network.
+
+Options: --learning-rate (alias --lr), --sessions, --wnt-delta, --ccl5-delta.
 
 Needs the package installed once from the repository root: pip install -e .
 """
+
 try:
     from asd_model.__main__ import main
 except ModuleNotFoundError as error:

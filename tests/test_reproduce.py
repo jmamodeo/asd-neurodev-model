@@ -1,4 +1,4 @@
-"""Tests for the reproduction pipeline: defaults, determinism, and that the shipped runs reproduce the paper's numbers."""
+"""Tests for the reproduction pipeline: defaults, determinism, and the paper's numbers from the shipped runs."""
 
 import gzip
 import inspect

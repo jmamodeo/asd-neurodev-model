@@ -1,4 +1,5 @@
 """Download CIFAR-10 and write a small PNG subset in the layout main.py expects."""
+
 import argparse
 import pickle
 import tarfile
@@ -26,7 +27,8 @@ def download(cache):
         print(f"Using cached {archive}")
     else:
         print(f"Downloading {URL} (about 163 MB)")
-        part = archive.with_name(archive.name + ".part")   # download to a temp name so an interrupted download is never reused
+        # download to a temp name so an interrupted download is never reused
+        part = archive.with_name(archive.name + ".part")
         urllib.request.urlretrieve(URL, part)
         part.replace(archive)
     return archive

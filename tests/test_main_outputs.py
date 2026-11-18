@@ -1,4 +1,4 @@
-"""Tests for the main.py outputs (training-loss plot and Excel table), which also guard against seaborn/pandas API changes."""
+"""Tests for the main.py outputs (training-loss plot and Excel table); also guards against seaborn/pandas changes."""
 
 import subprocess
 import sys

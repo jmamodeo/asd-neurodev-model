@@ -1,30 +1,32 @@
-"""Reproduce every figure and table of the paper with one command:
+"""Reproduce every figure and table of the paper with one command.
 
-    python reproduce.py            # (or ./reproduce.sh, `make figures`, `python -m asd_model.reproduce`, or `asd-reproduce`)
+    python reproduce.py   # or ./reproduce.sh, `make figures`, `python -m asd_model.reproduce`, or `asd-reproduce`
 
 What it does
-  1. For each learning-rate configuration (main = 0.03, supplementary = 0.1) it needs 4 conditions x 20 seeds per dataset
-     (CIFAR-10 subset; plus the authors' image set if you supply it, see --original-images). Finished runs are cached
-     in run_cache/ and the distributed cache reproduce_data/runs_lr*.json.gz is used first, so by default
-     NOTHING is retrained and the command just re-analyzes and re-plots (about 1-2 minutes).
-  2. Missing runs are trained (CIFAR-10 is downloaded automatically with scripts/fetch_cifar10.py), in parallel (--workers).
+  1. For each learning-rate configuration (main = 0.03, supplementary = 0.1) it needs 4 conditions x 20 seeds per
+     dataset (CIFAR-10 subset; plus the authors' image set if you supply it, see --original-images). Finished
+     runs are cached in run_cache/ and the distributed cache reproduce_data/runs_lr*.json.gz is used first, so by
+     default NOTHING is retrained and the command just re-analyzes and re-plots (about 1-2 minutes).
+  2. Missing runs are trained (CIFAR-10 is downloaded automatically with scripts/fetch_cifar10.py), in parallel
+     (--workers).
   3. Statistics, tables and figures are written to figures/ and tables/.
 
-Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figs1_..., figs2_..., figs3_... and tables.py each
-build just that figure (training only the runs it needs, sharing the run cache); the same is available here as
-python reproduce.py --only fig3 fig4 ...  (fig1 and fig2 need no training runs).
+Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figs1_..., figs2_..., figs3_...
+and tables.py each build just that figure (training only the runs it needs, sharing the run cache). The same is
+available here with `python reproduce.py --only fig3 fig4 ...` (fig1 and fig2 need no training runs).
 
 Useful options
   --only NAME [NAME ...]   build only these outputs: fig1 ... fig6 figs1 figs2 figs3 tables (default: everything)
   --retrain                ignore the distributed cache and retrain everything from scratch (hours; see README)
   --quick                  smoke test: 3 seeds, 20 sessions, CIFAR-10 only, outputs in figures_quick/ and tables_quick/
   --workers N              parallel training processes (default: number of CPU cores)
-  --original-images DIR    folder with train_subset/ and test_subset/ (trucks, dogs, cats, cars) for the authors' image set
+  --original-images DIR    folder with train_subset/ and test_subset/ (trucks, dogs, cats, cars) of the authors' images
   --seeds N / --sessions N override the number of seeds (default 20) / training sessions (default 100)
 
 Seeds are fixed (seed s always gives the same initial weights, shuffle order and release-map stream), so reruns are
 deterministic on the same machine/library versions.
 """
+
 import os
 
 os.environ.setdefault("OMP_NUM_THREADS", "1")

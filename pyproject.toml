@@ -56,6 +56,16 @@ testpaths = ["tests"]
 line-length = 120
 src = ["src", "tests"]
 
+[tool.ruff.format]
+# John's hand-written modules keep his layout (aligned continuation lines, teaching comments); `ruff format` skips them
+exclude = [
+    "src/asd_model/main.py",
+    "src/asd_model/neural_network.py",
+    "src/asd_model/network_tuning.py",
+    "src/asd_model/visual_input.py",
+    "src/asd_model/loss_outputs.py",
+]
+
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "N", "B", "SIM", "UP", "D"]
 # Keeps the original "This function ..." docstring voice; B905 (zip strict=) is checked by hand where lengths could differ.

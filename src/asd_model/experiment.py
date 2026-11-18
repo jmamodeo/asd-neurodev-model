@@ -58,7 +58,9 @@ def make_pooled_sampler(ccl5_delta, seed):
 
 
 def _to_float32(image_dict):
-    return {image_class: [vector.astype(np.float32) for vector in vectors] for image_class, vectors in image_dict.items()}
+    return {
+        image_class: [vector.astype(np.float32) for vector in vectors] for image_class, vectors in image_dict.items()
+    }
 
 
 def run_path(out_dir, data_name, condition, seed):
@@ -95,9 +97,7 @@ def run_experiment(data_name, data_dir, condition, seed, learning_rate, sessions
     if os.path.exists(path):
         return path
     ccl5_delta, wnt_delta = CONDITIONS[condition]
-    train_images = _to_float32(
-        image_to_matrix(os.path.join(data_dir, "train_subset"), CLASS_NAMES, IMAGE_VECTOR_SIZE)
-    )
+    train_images = _to_float32(image_to_matrix(os.path.join(data_dir, "train_subset"), CLASS_NAMES, IMAGE_VECTOR_SIZE))
     test_images = _to_float32(image_to_matrix(os.path.join(data_dir, "test_subset"), CLASS_NAMES, IMAGE_VECTOR_SIZE))
     labels = {key: value.astype(np.float32) for key, value in encode_image_labels(train_images).items()}
     np.random.seed(seed)  # initial weights (matched between control and CCL5)
