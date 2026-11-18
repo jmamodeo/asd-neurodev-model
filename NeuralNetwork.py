@@ -3,6 +3,13 @@ import numpy as np
 from network_tuning import *
 from analyze_data import *
 
+# Default learning rate. The original paper code used 0.1; after the corrections (shuffled training, softmax
+# output, release map in backprop) 0.1 makes the N(0,1)-initialised network unstable, so 0.03 is the default
+# (selected from a control-only pilot, see docs/paper and README). Use learn_r=ORIGINAL_LEARNING_RATE (or --lr 0.1
+# in main.py / reproduce.py) for the original value.
+DEFAULT_LEARNING_RATE = 0.03
+ORIGINAL_LEARNING_RATE = 0.1
+
 
 # Below is the Neural Network class with its functions for neural network creation, training, and testing.
 
@@ -268,7 +275,7 @@ class NeuralNetwork:
 
         return loss
 
-    def run_session(self, training_image_dict, encoded_label_dict, learn_r):
+    def run_session(self, training_image_dict, encoded_label_dict, learn_r=DEFAULT_LEARNING_RATE):
         """
         This function runs one training session: one pass over every training image, in a freshly
         shuffled order, with a forward pass (release maps on) and a weight update per image.
@@ -298,7 +305,7 @@ class NeuralNetwork:
 
         return losses, class_names
 
-    def train(self, training_image_dict, encoded_label_dict, learn_r, sessions):
+    def train(self, training_image_dict, encoded_label_dict, learn_r=DEFAULT_LEARNING_RATE, sessions=100):
         """
         This function trains the neural network to classify images according to the specific class
         labels with which the images are paired.

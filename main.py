@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import os
 
@@ -6,6 +7,14 @@ from NeuralNetwork import *
 
 # Press the green arrow button in the gutter to run the script.
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Train and test the ASD Wnt/CCL5 neural network model.')
+    parser.add_argument('--lr', type=float, default=DEFAULT_LEARNING_RATE,
+                        help='learning rate (default 0.03; the original paper code used 0.1)')
+    parser.add_argument('--sessions', type=int, default=100, help='training sessions (passes over the training set)')
+    parser.add_argument('--wnt-delta', type=float, default=0.0, help='fold change above normal, ASD = 0.41859')
+    parser.add_argument('--ccl5-delta', type=float, default=0.0, help='fold change above normal, ASD = 0.40467')
+    args = parser.parse_args()
 
     # Number of units in the vector made from an image, effectively input layer
     # You can alter this to change the size of the layers in the neural network (units in vector = nodes in layer)
@@ -34,12 +43,12 @@ if __name__ == '__main__':
     # You can alter the 'hidden_layer_number', that is the number of layers between the input and output layers
     # You can alter the 'ccl5_delta' for fold differences above/below normal (e.g., 1.5 fold above, enter 0.4)
     # You can alter the 'wnt_delta' for fold differences above/below normal (e.g., 1.5 fold below, enter -0.5)
-    net = NeuralNetwork(class_list, image_vector_size, hidden_layer_number=4, ccl5_delta=0, wnt_delta=0)
+    net = NeuralNetwork(class_list, image_vector_size, hidden_layer_number=4, ccl5_delta=args.ccl5_delta, wnt_delta=args.wnt_delta)
 
     # This is the command to train the neural network
-    # You can alter the learning rate ('learn_r') to make the size of weight updates bigger or smaller
+    # You can alter the learning rate ('learn_r', --lr) to make the size of weight updates bigger or smaller (default 0.03)
     # You can alter 'sessions' to change how many times the neural network runs the full image set during training
-    net.train(train_image_dict, encoded_label_dict, learn_r=0.1, sessions=100)
+    net.train(train_image_dict, encoded_label_dict, learn_r=args.lr, sessions=args.sessions)
 
     # This is the command to test the neural network
     # You can set 'use_release_maps' to 'True'/'False' for biological dynamic weighting of signals or fixed weighting
