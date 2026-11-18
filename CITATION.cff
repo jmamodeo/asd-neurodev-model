@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this code or the accompanying paper, please cite them as below."
 type: software
 title: "ASD Neurodevelopment Model"
-version: 1.0.0
+version: 1.1.0
 date-released: "2026-11-18"
 doi: 10.5281/zenodo.24344589
 abstract: >-
