@@ -2,21 +2,19 @@
 import gzip
 import json
 import os
-import sys
 import tempfile
 
 import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
 
 
 def test_default_learning_rate_is_0_03_and_original_selectable():
     import inspect
-    import NeuralNetwork as nn
+    from asd_model import NeuralNetwork as nn
     assert nn.DEFAULT_LEARNING_RATE == 0.03 and nn.ORIGINAL_LEARNING_RATE == 0.1
     assert inspect.signature(nn.NeuralNetwork.train).parameters["learn_r"].default == 0.03
-    src = open(os.path.join(ROOT, "main.py")).read()
+    src = open(os.path.join(ROOT, "src", "asd_model", "main.py")).read()
     assert "--lr" in src and "DEFAULT_LEARNING_RATE" in src
 
 
@@ -31,7 +29,7 @@ def _write_images(root, per_class=2):
 
 
 def test_experiment_is_deterministic_for_a_seed_and_shuffles_identically_across_conditions():
-    import experiment as ex
+    from asd_model import experiment as ex
     saved = ex.IMAGE_VECTOR_SIZE, ex.POOL_SIZE
     try:
         _deterministic_check(ex)
@@ -56,7 +54,7 @@ def _deterministic_check(ex):
 
 
 def test_shipped_runs_reproduce_paper_numbers():
-    import analysis as an
+    from asd_model import analysis as an
     with gzip.open(os.path.join(ROOT, "reproduce_data", "runs_lr0.03.json.gz"), "rt") as f:
         runs = json.load(f)
     assert len(runs) == 160 and {r["seed"] for r in runs} == set(range(20))
@@ -70,7 +68,7 @@ def test_shipped_runs_reproduce_paper_numbers():
 
 def test_every_figure_has_a_standalone_script():
     import os
-    import reproduce
+    from asd_model import reproduce
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scripts = os.listdir(os.path.join(root, "scripts", "figures"))
     for key in reproduce.FIGURES:
@@ -79,8 +77,8 @@ def test_every_figure_has_a_standalone_script():
 
 
 def test_schematic_layer_sizes_match_shipped_runs():
-    import reproduce
-    import figures_model as fm
+    from asd_model import reproduce
+    from asd_model import figures_model as fm
     seen = {r["cond"]: r["layer_sizes"] for r in reproduce.load_bundle(0.03)}
     assert fm.layer_sizes(0.0) == seen["control"] == seen["ccl5"]
     assert fm.layer_sizes(fm.WNT_DELTA) == seen["wnt"] == seen["both"] == [900, 1276, 1810, 2567, 3641, 4]
@@ -88,7 +86,7 @@ def test_schematic_layer_sizes_match_shipped_runs():
 
 def test_release_map_figure_statistics():
     import numpy as np
-    import figures_model as fm
+    from asd_model import figures_model as fm
     for delta in (0.0, fm.CCL5_DELTA):
         v = fm.sample_release_values(delta, n=1_000_000)
         mean = 1 + delta
@@ -98,8 +96,8 @@ def test_release_map_figure_statistics():
 
 def test_observed_vs_additive_estimates():
     import numpy as np
-    import reproduce
-    import analysis as an
+    from asd_model import reproduce
+    from asd_model import analysis as an
     df = an.per_run_table([r for r in reproduce.load_bundle(0.03) if r["data"] == "cifar3"])
     E = an.observed_vs_additive(df, "auc")
     m = df.groupby("cond").auc.mean()

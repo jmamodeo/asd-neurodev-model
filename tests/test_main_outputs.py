@@ -4,9 +4,6 @@ import sys
 
 import numpy as np
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-
 
 def _write_images(root, per_class=2):
     import cv2
@@ -21,8 +18,8 @@ def test_training_writes_loss_plot_and_table(tmp_path, monkeypatch):
     """A short run of the model, as main.py does it, writes results/<date> results/ with the plot and the table."""
     import matplotlib
     matplotlib.use("Agg")
-    from visual_input import image2matrix, encode_image_labels
-    from NeuralNetwork import NeuralNetwork
+    from asd_model.visual_input import image2matrix, encode_image_labels
+    from asd_model.NeuralNetwork import NeuralNetwork
 
     class_list = ['trucks', 'dogs', 'cats', 'cars']
     _write_images(str(tmp_path / "images"))
@@ -37,3 +34,10 @@ def test_training_writes_loss_plot_and_table(tmp_path, monkeypatch):
     out = list((tmp_path / "results").iterdir())
     assert len(out) == 1
     assert sorted(p.name for p in out[0].iterdir()) == ["training_loss_plot.png", "training_loss_table.xlsx"]
+
+
+def test_module_entry_point_runs():
+    """`python -m asd_model --help` starts the main.py command line."""
+    import subprocess
+    result = subprocess.run([sys.executable, "-m", "asd_model", "--help"], capture_output=True, text=True)
+    assert result.returncode == 0 and "--wnt-delta" in result.stdout

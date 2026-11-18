@@ -1,13 +1,9 @@
 import copy
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 
-from NeuralNetwork import NeuralNetwork
-from network_tuning import get_release_maps
+from asd_model.NeuralNetwork import NeuralNetwork
+from asd_model.network_tuning import get_release_maps
 
 
 def make_net(n_in=5, hidden=2, classes=("a", "b", "c"), ccl5_delta=0.0):
