@@ -1,12 +1,64 @@
 # ASD Neurodevelopment Model
 
-A Python neural-network model of how elevated Wnt and mTOR-activated CCL5 signaling in autism spectrum disorder (ASD) could affect visual image classification.
+[![tests](https://github.com/jmamodeo/asd-neurodev-model/actions/workflows/tests.yml/badge.svg)](https://github.com/jmamodeo/asd-neurodev-model/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+A Python neural-network model of how elevated Wnt and mTOR-activated CCL5 signaling in autism spectrum disorder (ASD) could slow learning in a visual image-classification network. Written in NumPy; accompanies the paper in [`docs/paper/paper.pdf`](docs/paper/paper.pdf).
+
+![Training loss over sessions in the four conditions (control, CCL5, Wnt, Wnt + CCL5), learning rate 0.03](figures/loss_curves_lr0.03.png)
+
+*Training loss (top) and held-out loss (bottom) over 100 sessions, mean and 95% interval over 20 seeded networks per condition (paper Figure 3). Both perturbations slow the fall in training loss, and together they slow it more than the sum of their separate effects.*
+
+## Contents
+
+- [Background](#background)
+- [Quick start](#quick-start)
+- [`main.py` or `reproduce.py`?](#mainpy-or-reproducepy)
+- [How the model works](#how-the-model-works)
+- [Repository map](#repository-map)
+- [Installation](#installation)
+- [Data](#data)
+- [Running one network (`main.py`)](#running-one-network-mainpy)
+- [Reproducing the paper's figures and tables (`reproduce.py`)](#reproducing-the-papers-figures-and-tables-reproducepy)
+- [Methods-to-code map](#methods-to-code-map)
+- [Tests](#tests)
+- [Results at a glance](#results-at-a-glance)
+- [Citation](#citation)
+- [Limitations](#limitations)
+- [License](#license)
 
 ## Background
 
 ASD is a heterogeneous neurodevelopmental disorder, and vision is one of the senses particularly affected. Two pathways, Wnt and mTOR, have been identified as high risk. Wnt proteins stabilize synapses, and mTOR activates CCL5, which stimulates glutamate release. In excess, these proteins cause unnecessary synapses to form and survive, a hallmark of ASD.
 
-The paper uses visual processing as a base to examine the effect of both proteins at ASD levels in a neural network, as a way to study population dynamics rather than only single cells. The paper ([docs/paper/paper.pdf](docs/paper/paper.pdf)) reports that both perturbations slow the reduction of training loss, that the two together slow it more than the sum of their separate effects, and that held-out classification accuracy stays near chance because the image sets are very small.
+The paper uses visual processing as a base to examine the effect of both proteins at ASD levels in a neural network, as a way to study population dynamics rather than only single cells. It reports that both perturbations slow the reduction of training loss, that the two together slow it more than the sum of their separate effects, and that held-out classification accuracy stays near chance because the image sets are very small.
+
+## Quick start
+
+Needs Python 3.11 (3.12 also works with the pinned versions).
+
+```bash
+git clone https://github.com/jmamodeo/asd-neurodev-model.git
+cd asd-neurodev-model
+python3.11 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt        # or: pip install -e .
+
+python reproduce.py                    # re-creates every figure and table of the paper (about 30 seconds)
+python -m pytest -q                    # runs the tests
+```
+
+To train a single network on your own images or on CIFAR-10, see [Running one network](#running-one-network-mainpy).
+
+## `main.py` or `reproduce.py`?
+
+| | `main.py` | `reproduce.py` |
+|---|---|---|
+| Purpose | Train and test **one** network and watch it learn. The simple, readable way to use the model. | Re-create **everything in the paper**: 4 conditions x 20 seeds x 2 image sets, statistics, tables, figures. |
+| Needs images | Yes, in `image_set/` ([Data](#data)) | No. It re-analyzes the finished runs shipped in `reproduce_data/`. Images are only needed with `--retrain`. |
+| Random seed | None (runs differ) | Fixed (reruns are identical on the same library versions) |
+| Output | Printed loss per session and accuracy, `results/<date> results/training_loss_plot.png` and `training_loss_table.xlsx` | `figures/` and `tables/` |
+| Runtime | Seconds to minutes | About 30 seconds from the shipped runs; 2-3 hours per learning rate with `--retrain` |
+| Code path | `visual_input.py`, `NeuralNetwork.py`, `network_tuning.py`, `analyze_data.py` | `reproduce.py`, which calls `experiment.py` (runs the same `NeuralNetwork` class), `analysis.py` and `figures_model.py` |
 
 ## How the model works
 
@@ -19,11 +71,35 @@ The paper uses visual processing as a base to examine the effect of both protein
 
 Values used in the paper for ASD: `wnt_delta` = 0.41859 and `ccl5_delta` = 0.40467 (fold changes of 1.41859 and 1.40467 relative to normal). The paper's runs used `image_vector_size` 900 and 100 sessions, whereas `main.py` defaults to an `image_vector_size` of 400.
 
-## Installation
-
-Python 3.11 (the version used in the paper). `requirements.txt` pins package versions that were verified to run `main.py` end to end on Python 3.11; newer seaborn (0.13+) and pandas (3.x) releases break the training-loss plot.
+## Repository map
 
 ```
+main.py                 Train and test one network (command line)
+NeuralNetwork.py        The NeuralNetwork class: layers, forward pass, backprop, training, testing
+network_tuning.py       Release maps (CCL5), sigmoid and softmax
+visual_input.py         Image loading and label encoding
+analyze_data.py         Loss plot and spreadsheet written by main.py
+reproduce.py            One command that re-creates every paper figure and table
+experiment.py           One seeded run (condition, seed) used by reproduce.py
+analysis.py             Statistics, tables and Figures 3-6, S1-S3
+figures_model.py        Figures 1 and 2 (model schematic, release-map distributions)
+reproduce.sh, Makefile  Shortcuts for reproduce.py (also: make quick, make paper, make test)
+scripts/figures/        One script per figure or table (fig1 ... fig6, figS1 ... figS3, tables)
+scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
+reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
+figures/, tables/       Generated figures and tables (committed)
+docs/paper/             Paper (PDF and Markdown source), analysis plan, references, PDF build script
+docs/methods_to_code.md Which function implements which step of the paper's Methods
+tests/                  pytest tests
+requirements.txt        Pinned package versions (pyproject.toml lists the same pins)
+image_set/, results/    Empty folders for your images and for main.py output
+```
+
+## Installation
+
+Python 3.11 is the version used in the paper. `requirements.txt` pins package versions that were verified to run `main.py` and `reproduce.py` end to end on Python 3.11 (the tests also pass on 3.12). `pyproject.toml` lists the same pins, so `pip install -e .` installs the same environment; the code itself is run from the repository root and is not installed as a package. Current seaborn and pandas releases also run `main.py`, but the pinned versions are the ones the paper's results were produced with.
+
+```bash
 python3.11 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -43,7 +119,7 @@ Class folder names must match `class_list` in `main.py` (default: `trucks`, `dog
 
 **Option A: CIFAR-10.** Run
 
-```
+```bash
 python scripts/fetch_cifar10.py
 ```
 
@@ -55,28 +131,32 @@ Citation: Krizhevsky, A. (2009). Learning Multiple Layers of Features from Tiny 
 
 The paper's own image set (small web images) is not redistributed here.
 
-## Running
+## Running one network (`main.py`)
 
 From the repository root:
 
-```
-python main.py
+```bash
+python main.py                                       # control network
+python main.py --wnt-delta 0.41859 --ccl5-delta 0.40467   # both perturbations at ASD levels
+python main.py --lr 0.1 --sessions 50                # other learning rate, fewer sessions
 ```
 
-Parameters set in `main.py`:
+Command-line options: `--lr` (learning rate, default 0.03), `--sessions` (default 100), `--wnt-delta` and `--ccl5-delta` (fold change above normal, default 0).
+
+Settings edited inside `main.py`:
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `image_vector_size` | 400 | Input layer size (image vector length) |
+| `image_vector_size` | 400 | Input layer size (image vector length; a square number, since images are resized to a square) |
 | `class_list` | `['trucks', 'dogs', 'cats', 'cars']` | Image classes; must match folder names |
 | `hidden_layer_number` | 4 | Number of hidden layers |
-| `ccl5_delta` | 0 | Fold difference in CCL5 relative to normal (e.g., 0.4 for 1.4 fold) |
-| `wnt_delta` | 0 | Fold difference in Wnt relative to normal |
+| `ccl5_delta` | 0 (`--ccl5-delta`) | Fold difference in CCL5 relative to normal (e.g., 0.4 for 1.4 fold) |
+| `wnt_delta` | 0 (`--wnt-delta`) | Fold difference in Wnt relative to normal |
 | `learn_r` | 0.03 (`--lr`) | Learning rate |
-| `sessions` | 100 | Passes over the full training set |
+| `sessions` | 100 (`--sessions`) | Passes over the full training set |
 | `use_release_maps` | `True` | Release-map weighting at test time (always on in training) |
 
-The paper compares four conditions, which can be set as examples:
+The paper compares four conditions:
 
 | Condition | `wnt_delta` | `ccl5_delta` |
 |---|---|---|
@@ -85,15 +165,15 @@ The paper compares four conditions, which can be set as examples:
 | Wnt only | 0.41859 | 0 |
 | Both | 0.41859 | 0.40467 |
 
-## Outputs
+Outputs:
 
 - The loss for each training session is printed.
 - Held-out accuracy (output-based) is printed.
 - `results/<YYYY-MM-DD HHhMMm> results/` contains `training_loss_plot.png` and `training_loss_table.xlsx`.
 
-`main.py` sets no random seed, so runs differ; `reproduce.py` uses fixed seeds.
+`main.py` sets no random seed, so runs differ; `reproduce.py` uses fixed seeds. The paper's runs used `image_vector_size` 900 and 100 sessions, whereas `main.py` defaults to 400.
 
-## Reproduce the figures
+## Reproducing the paper's figures and tables (`reproduce.py`)
 
 **Everything at once (one command):**
 
@@ -126,7 +206,36 @@ python reproduce.py            # or ./reproduce.sh, or: make figures
 - Seeds are fixed. On the same machine and library versions a retrained run reproduces the shipped run bit for bit. Across different numpy/BLAS builds the first training session agrees to about 1e-4 but float32 rounding differences are amplified by the training dynamics, so individual curves differ while the group statistics agree.
 - Rebuild the paper PDF with `pip install -r docs/paper/requirements.txt && python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
 
+## Methods-to-code map
+
+[`docs/methods_to_code.md`](docs/methods_to_code.md) lists, for each step of the paper's Methods (image input, Wnt layer growth, CCL5 release maps, softmax and cross-entropy, training, statistics, figures), the file and function that implement it.
+
+## Tests
+
+```bash
+python -m pytest -q        # or: make test
+```
+
+The tests check the model's learning rules, that a short training run writes its plot and spreadsheet, that runs are deterministic for a seed, and that the shipped runs reproduce the paper's numbers. They run on every push through GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) on Python 3.11 and 3.12 with the pinned versions, plus an informational run with the newest libraries.
+
+## Results at a glance
+
+Learning rate 0.03, mean over 20 seeds, CIFAR-10 subset (full tables with both image sets in [`tables/`](tables/)):
+
+| Condition | Area under the training-loss curve (lower = faster learning) | Final loss | Sessions to reach chance-level loss | Held-out accuracy |
+|---|---|---|---|---|
+| Control | 0.87 | 0.06 | 11.1 | 25.8% |
+| CCL5 | 1.82 | 0.28 | 16.8 | 26.2% |
+| Wnt | 2.37 | 0.46 | 20.1 | 31.2% |
+| Wnt + CCL5 | 4.17 | 1.24 | 33.4 | 29.2% |
+
+Held-out accuracy is near the 25% chance level in every condition because each image set has only three training and three test images per class.
+
+![Model schematic: layer widths with and without Wnt, and release maps on each weight matrix](figures/model_schematic.png)
+
 ## Citation
+
+If you use this code or the paper, please cite it. GitHub's "Cite this repository" button uses [`CITATION.cff`](CITATION.cff).
 
 Marri, R. & Amodeo, J. (2023). Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics. [docs/paper/paper.pdf](docs/paper/paper.pdf) (source in `docs/paper/paper.md`)
 
@@ -134,7 +243,8 @@ Marri, R. & Amodeo, J. (2023). Modeling the effects of the Wnt and mTOR signalin
 @misc{marri2023wntmtor,
   author = {Marri, Rithvik and Amodeo, John},
   title  = {Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics},
-  year   = {2023}
+  year   = {2023},
+  url    = {https://github.com/jmamodeo/asd-neurodev-model}
 }
 ```
 
