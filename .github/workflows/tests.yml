@@ -6,6 +6,18 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install ruff==0.17.5
+      - run: ruff check .
+      - run: ruff format --check .
+
   pinned:
     name: pytest (Python ${{ matrix.python-version }}, pinned dependencies)
     runs-on: ubuntu-latest

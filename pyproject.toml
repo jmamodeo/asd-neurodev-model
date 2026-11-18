@@ -29,6 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["pytest==8.0.2"]
 paper = ["Markdown==3.11.3", "weasyprint==70.0"]  # only to rebuild docs/paper/paper.pdf
+lint = ["ruff==0.17.5"]  # ruff check . and ruff format --check . (settings below)
 
 [project.urls]
 Repository = "https://github.com/jmamodeo/asd-neurodev-model"

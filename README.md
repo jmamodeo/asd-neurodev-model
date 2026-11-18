@@ -87,15 +87,15 @@ src/asd_model/          The package
   paper_analysis.py     Statistics, tables and Figures 3-6, S1-S3
   model_figures.py      Figures 1 and 2 (model schematic, release-map distributions)
 main.py, reproduce.py   Root shortcuts: `python main.py` and `python reproduce.py` run the same code
-reproduce.sh, Makefile  More shortcuts (make install, make figures, make quick, make paper, make test)
+reproduce.sh, Makefile  More shortcuts (make install, make figures, make quick, make paper, make test, make lint)
 scripts/figures/        One script per figure or table (fig1 ... fig6, figs1 ... figs3, tables)
 scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
 reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
 figures/, tables/       Generated figures and tables (committed)
 docs/paper/             Paper (PDF and Markdown source), analysis plan, references, PDF build script
 docs/methods_to_code.md Which function implements which step of the paper's Methods
-tests/                  pytest tests
-pyproject.toml          Package metadata, pinned dependencies, console scripts
+tests/                  pytest tests (conftest.py has the fixture that writes random test images)
+pyproject.toml          Package metadata, pinned dependencies, console scripts, ruff settings
 requirements.txt        `-e .[test]`, so that `pip install -r requirements.txt` still works
 image_set/, results/    Empty folders for your images and for main.py output
 ```
@@ -226,6 +226,10 @@ python -m pytest -q        # or: make test
 ```
 
 The tests check the model's learning rules, that a short training run writes its plot and spreadsheet, that runs are deterministic for a seed, and that the shipped runs reproduce the paper's numbers. They run on every push through GitHub Actions ([`.github/workflows/tests.yml`](.github/workflows/tests.yml)) on Python 3.11 and 3.12 with the pinned versions, plus an informational run with the newest libraries.
+
+## Code style
+
+The code follows PEP 8 naming (snake_case functions and variables, CapWords classes, UPPER_SNAKE constants, lowercase module names), numpy-style docstrings, double quotes and a 120-column limit. [Ruff](https://docs.astral.sh/ruff/) checks this (`pip install -e .[lint]`, then `make lint`; settings are in `pyproject.toml` and the same check runs on GitHub Actions). The modules written by hand (`main.py`, `neural_network.py`, `network_tuning.py`, `visual_input.py`, `loss_outputs.py` in `src/asd_model/`) keep their original layout and teaching comments and are skipped by `ruff format`.
 
 ## Results at a glance
 
