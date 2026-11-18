@@ -32,10 +32,10 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 | Shipped finished runs | `reproduce_data/runs_lr0.03.json.gz`, `runs_lr0.1.json.gz` | Written by `scripts/export_run_bundle.py` |
 | Per-run measures: AUC, final loss, sessions to half of the first loss, sessions to ln 4, held-out accuracy and loss | `paper_analysis.per_run_table()` | `LN4` is the cross-entropy of a uniform guess over four classes |
 | Two-way ANOVA with partial eta squared | `paper_analysis._anova()` | `statsmodels`, type II |
-| Welch t-tests against the control, Holm correction, Cohen's d with bootstrap CI | `paper_analysis.compute_statistics()`, `_holm()`, `_cohen_d()` | |
+| Welch t-tests against the control, Holm correction, Cohen's d with bootstrap CI | `paper_analysis.compute_statistics()`, `_holm_correction()`, `_cohens_d()` | |
 | Interaction checked with a permutation test within seeds | `paper_analysis._permutation_interaction()` | |
 | Observed vs additive effect with 95% bootstrap CIs | `paper_analysis.observed_vs_additive()` | Resamples seeds |
-| Held-out accuracy against chance (25%) | `paper_analysis.compute_statistics()` (`R["accuracy"]`) | One-sample t-tests |
+| Held-out accuracy against chance (25%) | `paper_analysis.compute_statistics()` (the `"accuracy"` entry) | One-sample t-tests |
 | Tables 1-3 | `paper_analysis.markdown_tables()`, `paper_analysis.write_tables()` | Written to `tables/` |
 | Figures 1-6 and Supplementary Figures S1-S2 | `model_figures.py` (Figures 1 and 2), `paper_analysis.py` (Figures 3-6, S1-S2), driven by `reproduce.py` | One script per figure in `scripts/figures/` |
 | Pre-specified analysis plan | `docs/paper/analysis_plan.md` | |

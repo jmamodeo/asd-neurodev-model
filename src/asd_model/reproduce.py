@@ -170,7 +170,7 @@ def main(argv=None, only=None):
             continue
         title = f"{CONFIG_NAME.get(lr, f'lr {lr:g}')}"
         path = paper_analysis.make_figure(kind, runs_by_lr[lr], tag_for(lr, opts.quick), fig_dir, title,
-                              height=paper_analysis.FIG_HEIGHT_SUPP.get(kind) if lr == 0.1 else None)
+                              height=paper_analysis.SUPPLEMENT_FIGURE_HEIGHTS.get(kind) if lr == 0.1 else None)
         print(f"[{name}] wrote {os.path.relpath(path, ROOT)}", flush=True)
     print(f"done in {time.time() - t_start:.0f}s")
 
