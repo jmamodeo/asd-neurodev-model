@@ -12,7 +12,6 @@ Placeholders in paper.md:  {{S:data:cond:metric[@tag]}} mean ± 95% CI,  {{M:...
 import json
 import os
 import re
-import sys
 
 import markdown
 from weasyprint import HTML

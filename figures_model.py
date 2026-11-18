@@ -1,6 +1,5 @@
 """Figures that describe the model itself and need no training runs: the network schematic and the release-map
 distributions. Both are generated programmatically (numbers come from the same code and constants the model uses)."""
-import os
 
 import numpy as np
 import matplotlib
