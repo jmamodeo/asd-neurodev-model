@@ -15,3 +15,9 @@ image_set/**/*
 !image_set/README.md
 results/*
 !results/.gitkeep
+
+# reproduce.py caches and quick-mode outputs
+run_cache/
+image_set_cifar3/
+figures_quick/
+tables_quick/
