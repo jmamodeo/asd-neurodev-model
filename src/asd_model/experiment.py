@@ -19,8 +19,8 @@ import json
 import time
 import numpy as np
 
-from visual_input import image2matrix, encode_image_labels
-from NeuralNetwork import NeuralNetwork
+from asd_model.visual_input import image2matrix, encode_image_labels
+from asd_model.NeuralNetwork import NeuralNetwork
 
 CONDITIONS = {  # name: (ccl5_delta, wnt_delta)
     "control": (0.0, 0.0),

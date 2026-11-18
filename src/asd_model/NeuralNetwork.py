@@ -1,7 +1,7 @@
 import numpy as np
 
-from network_tuning import *
-from analyze_data import *
+from asd_model.network_tuning import *
+from asd_model.analyze_data import *
 
 # Default learning rate. A learning rate of 0.1 makes the N(0,1)-initialised network unstable (shuffled training,
 # softmax output, release map in backprop), so 0.03 is the default (selected from a control-only pilot, see

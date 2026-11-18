@@ -7,9 +7,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Polygon, Circle
 
-import experiment as ex
-from analysis import PAGE_WIDTH   # also applies the shared font settings
-from network_tuning import get_release_maps
+from asd_model import experiment as ex
+from asd_model.analysis import PAGE_WIDTH   # also applies the shared font settings
+from asd_model.network_tuning import get_release_maps
 
 CCL5_DELTA = ex.CONDITIONS["ccl5"][0]
 WNT_DELTA = ex.CONDITIONS["wnt"][1]

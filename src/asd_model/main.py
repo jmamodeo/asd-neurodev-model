@@ -1,10 +1,10 @@
 import argparse
 import os
 
-from visual_input import *
-from NeuralNetwork import *
+from asd_model.visual_input import *
+from asd_model.NeuralNetwork import *
 
-# Run from the repository root with: python main.py   (options: --lr, --sessions, --wnt-delta, --ccl5-delta)
+# Run from the repository root with: python -m asd_model   (or python main.py; options: --lr, --sessions, --wnt-delta, --ccl5-delta)
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Train and test the ASD Wnt/CCL5 neural network model.')

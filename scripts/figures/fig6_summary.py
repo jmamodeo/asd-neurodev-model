@@ -6,11 +6,7 @@ Options: --quick, --retrain, --workers N, --seeds N, --sessions N, --original-im
 
     python scripts/figures/fig6_summary.py
 """
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-import reproduce  # noqa: E402
+from asd_model import reproduce
 
 if __name__ == "__main__":
     reproduce.main(only=["fig6"])

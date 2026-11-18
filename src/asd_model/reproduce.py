@@ -1,7 +1,6 @@
-#!/usr/bin/env python
 """Reproduce every figure and table of the paper with one command:
 
-    python reproduce.py            # (or ./reproduce.sh, or `make figures`)
+    python reproduce.py            # (or ./reproduce.sh, `make figures`, `python -m asd_model.reproduce`, or `asd-reproduce`)
 
 What it does
   1. For each learning-rate configuration (main = 0.03, supplementary = 0.1) it needs 4 conditions x 20 seeds per dataset
@@ -39,12 +38,11 @@ import subprocess
 import sys
 import time
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, ROOT)
+from asd_model import experiment as ex
+from asd_model import analysis as an
+from asd_model import figures_model as fm
 
-import experiment as ex          # noqa: E402
-import analysis as an            # noqa: E402
-import figures_model as fm       # noqa: E402
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # repository root (src/asd_model/ is two levels down)
 
 CACHE = os.path.join(ROOT, "run_cache")
 BUNDLES = os.path.join(ROOT, "reproduce_data")
