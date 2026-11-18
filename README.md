@@ -1,6 +1,7 @@
 # ASD Neurodevelopment Model
 
 [![tests](https://github.com/jmamodeo/asd-neurodev-model/actions/workflows/tests.yml/badge.svg)](https://github.com/jmamodeo/asd-neurodev-model/actions/workflows/tests.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24344589.svg)](https://doi.org/10.5281/zenodo.24344589)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A Python neural-network model of how elevated Wnt and mTOR-activated CCL5 signaling in autism spectrum disorder (ASD) could slow learning in a visual image-classification network. Written in NumPy; accompanies the paper in [`docs/paper/paper.pdf`](docs/paper/paper.pdf).
@@ -237,6 +238,8 @@ Held-out accuracy is near the 25% chance level in every condition because each i
 
 If you use this code or the paper, please cite it. GitHub's "Cite this repository" button uses [`CITATION.cff`](CITATION.cff).
 
+Software (all versions, archived on Zenodo): Marri, R. & Amodeo, J. *ASD Neurodevelopment Model*. Zenodo. https://doi.org/10.5281/zenodo.24344589
+
 Marri, R. & Amodeo, J. (2023). Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics. [docs/paper/paper.pdf](docs/paper/paper.pdf) (source in `docs/paper/paper.md`)
 
 ```bibtex
@@ -244,6 +247,7 @@ Marri, R. & Amodeo, J. (2023). Modeling the effects of the Wnt and mTOR signalin
   author = {Marri, Rithvik and Amodeo, John},
   title  = {Modeling the effects of the Wnt and mTOR signaling pathways on ASD-impacted visual processing using neural networks to reflect population dynamics},
   year   = {2023},
+  doi    = {10.5281/zenodo.24344589},
   url    = {https://github.com/jmamodeo/asd-neurodev-model}
 }
 ```

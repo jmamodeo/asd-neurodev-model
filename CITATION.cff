@@ -4,6 +4,7 @@ type: software
 title: "ASD Neurodevelopment Model"
 version: 1.0.0
 date-released: "2026-11-18"
+doi: 10.5281/zenodo.24344589
 abstract: >-
   A Python neural-network model of how elevated Wnt and mTOR-activated CCL5
   signaling in autism spectrum disorder could slow learning in a visual
