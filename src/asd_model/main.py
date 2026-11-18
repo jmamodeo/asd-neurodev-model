@@ -1,3 +1,5 @@
+"""Train and test one network from the command line (python -m asd_model, see --help)."""
+
 import argparse
 import os
 
@@ -11,15 +13,18 @@ from asd_model.neural_network import (
 )
 from asd_model.visual_input import encode_image_labels, image_to_matrix
 
-# Run from the repository root with: python -m asd_model   (or python main.py; options: --learning-rate (or --lr), --sessions, --wnt-delta, --ccl5-delta)
+# Run from the repository root with: python -m asd_model   (or python main.py)
+# Options: --learning-rate (or --lr), --sessions, --wnt-delta, --ccl5-delta
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Train and test the ASD Wnt/CCL5 neural network model.")
     parser.add_argument("--learning-rate", "--lr", type=float, default=DEFAULT_LEARNING_RATE,
                         help="learning rate (default 0.03; 0.1 makes the network unstable, see the paper supplement)")
-    parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS, help="training sessions (passes over the training set)")
+    parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS,
+                        help="training sessions (passes over the training set)")
     parser.add_argument("--wnt-delta", type=float, default=0.0, help=f"fold change above normal, ASD = {ASD_WNT_DELTA}")
-    parser.add_argument("--ccl5-delta", type=float, default=0.0, help=f"fold change above normal, ASD = {ASD_CCL5_DELTA}")
+    parser.add_argument("--ccl5-delta", type=float, default=0.0,
+                        help=f"fold change above normal, ASD = {ASD_CCL5_DELTA}")
     args = parser.parse_args()
 
     # Number of units in the vector made from an image, effectively input layer
@@ -49,12 +54,15 @@ if __name__ == "__main__":
     # You can alter the 'hidden_layer_number', that is the number of layers between the input and output layers
     # You can alter the 'ccl5_delta' for fold differences above/below normal (e.g., 1.5 fold above, enter 0.4)
     # You can alter the 'wnt_delta' for fold differences above/below normal (e.g., 1.5 fold below, enter -0.5)
-    net = NeuralNetwork(class_list, image_vector_size, hidden_layer_number=4, ccl5_delta=args.ccl5_delta, wnt_delta=args.wnt_delta)
+    net = NeuralNetwork(class_list, image_vector_size, hidden_layer_number=4,
+                        ccl5_delta=args.ccl5_delta, wnt_delta=args.wnt_delta)
 
     # This is the command to train the neural network
-    # You can alter the learning rate ('learning_rate', --learning-rate) to make the size of weight updates bigger or smaller (default 0.03)
+    # You can alter the learning rate ('learning_rate', --learning-rate) to make the size of weight updates
+    # bigger or smaller (default 0.03)
     # You can alter 'sessions' to change how many times the neural network runs the full image set during training
-    training_history = net.train(train_image_dict, encoded_label_dict, learning_rate=args.learning_rate, sessions=args.sessions)
+    training_history = net.train(train_image_dict, encoded_label_dict,
+                                 learning_rate=args.learning_rate, sessions=args.sessions)
 
     # These are the commands to plot the mean loss over the sessions and to export the loss table to Excel
     # Both files are saved in a new folder in 'results', named according to the date and time

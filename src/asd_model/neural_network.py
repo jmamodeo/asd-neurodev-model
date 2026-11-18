@@ -1,3 +1,5 @@
+"""The neural network model: the NeuralNetwork class and the default settings of the model."""
+
 from typing import NamedTuple
 
 import numpy as np
@@ -33,7 +35,8 @@ class TrainingHistory(NamedTuple):
 # Below is the Neural Network class with its functions for neural network creation, training, and testing.
 
 class NeuralNetwork:
-    """
+    """A neural network for classifying images, modulated by Wnt and CCL5 signaling.
+
     This class creates instances of a neural network for classifying images. The layer size,
     the number of hidden layers, and the classes used for image classification are
     customizable.
@@ -93,13 +96,17 @@ class NeuralNetwork:
 
         Parameters
         ----------
-        class_list
-        image_vector_size
-        hidden_layer_number
-        ccl5_delta
-        wnt_delta
+        class_list : list of str
+            Names of the image classes (the output layer has one node per class).
+        image_vector_size : int
+            Length of an image vector, which is the size of the input layer.
+        hidden_layer_number : int
+            Number of hidden layers.
+        ccl5_delta : float
+            Fold change of CCL5 above normal (0 = normal); sets the mean of the release maps.
+        wnt_delta : float
+            Fold change of Wnt above normal (0 = normal); sets how much each hidden layer grows.
         """
-
         # Initializing layer sizes
         self.layer_sizes = [image_vector_size]
         for _ in range(hidden_layer_number):
@@ -126,7 +133,8 @@ class NeuralNetwork:
         self.last_effective_weights = None
 
     def feedforward(self, image_vector, use_release_maps=True):
-        """
+        """Pass an image vector through the network and return the activity of every layer.
+
         This function passes the pixel values of the image vector (input layer) through
         the hidden layers to the output layer, with the inputs from one layer to the next
         scaled by distinct weight matrices, and return a list of layer activities.
@@ -149,14 +157,16 @@ class NeuralNetwork:
 
         Parameters
         ----------
-        image_vector
-        use_release_maps
+        image_vector : numpy.ndarray
+            The image as a column vector (image_vector_size x 1).
+        use_release_maps : bool
+            Whether to multiply the weights by sampled release maps (True) or by ones (False).
 
         Returns
         -------
-        layer_activities
+        list of numpy.ndarray
+            The activity of the input layer followed by that of every hidden layer and the output layer.
         """
-
         # Keep the sampled release maps (and effective weights) so backprop uses the same
         # weights as the forward pass
         if use_release_maps:
@@ -183,7 +193,8 @@ class NeuralNetwork:
         return layer_activities
 
     def feedback(self, encoded_label, layer_activities, learning_rate, release_maps=None, max_gradient_norm=1.0):
-        """
+        """Update the weights and biases from the difference between the output and the encoded label.
+
         This function updates the weights and biases for connections between layers of the
         network based on the differences between image class probabilities held by nodes in
         the output layer and the encoded image label.
@@ -233,17 +244,22 @@ class NeuralNetwork:
 
         Parameters
         ----------
-        encoded_label
-        layer_activities
-        learning_rate
-        release_maps
-        max_gradient_norm
+        encoded_label : numpy.ndarray
+            The encoded label of the image (a column of 0s with a 1 at the true class).
+        layer_activities : list of numpy.ndarray
+            The layer activities returned by feedforward() for this image.
+        learning_rate : float
+            Size of the weight updates.
+        release_maps : list of numpy.ndarray, optional
+            Release maps of the forward pass (default: the ones stored by the last feedforward()).
+        max_gradient_norm : float
+            Threshold for clipping the gradients (default 1.0).
 
         Returns
         -------
-        loss
+        float
+            The cross-entropy loss of this image before the update.
         """
-
         # Use the release maps from the forward pass
         # (when the maps are the ones from the immediately preceding feedforward, W has not changed since,
         # so the stored effective weights are reused instead of recomputing W * M)
@@ -294,7 +310,8 @@ class NeuralNetwork:
         return loss
 
     def run_session(self, training_image_dict, encoded_label_dict, learning_rate=DEFAULT_LEARNING_RATE):
-        """
+        """Run one training session: one shuffled pass over every training image.
+
         This function runs one training session: one pass over every training image, in a freshly
         shuffled order, with a forward pass (release maps on) and a weight update per image.
 
@@ -302,11 +319,22 @@ class NeuralNetwork:
         np.random.permutation, so images from different classes are interleaved within a session
         (updates are not blocked by class and a session does not end on a single class).
 
+        Parameters
+        ----------
+        training_image_dict : dict
+            Image class name (key)-list of image vectors (value) pairs used for training.
+        encoded_label_dict : dict
+            Image class name (key)-encoded class label (value) pairs.
+        learning_rate : float
+            Size of the weight updates.
+
         Returns
         -------
-        losses (per example, in presentation order), class_names (in presentation order)
+        losses : list of float
+            The loss of every example, in presentation order.
+        class_names : list of str
+            The image class of every example, in presentation order.
         """
-
         # Shuffled presentation order across all classes
         examples = [(image_class, image_vector)
                     for image_class, image_list in training_image_dict.items()
@@ -323,8 +351,11 @@ class NeuralNetwork:
 
         return losses, class_names
 
-    def train(self, training_image_dict, encoded_label_dict, learning_rate=DEFAULT_LEARNING_RATE, sessions=DEFAULT_SESSIONS):
-        """
+    def train(
+        self, training_image_dict, encoded_label_dict, learning_rate=DEFAULT_LEARNING_RATE, sessions=DEFAULT_SESSIONS
+    ):
+        """Train the network on the training images for a number of sessions.
+
         This function trains the neural network to classify images according to the specific class
         labels with which the images are paired.
 
@@ -380,7 +411,6 @@ class NeuralNetwork:
             The loss of every image in every session, the session number of each loss, and the per-class loss
             table of every session.
         """
-
         number_of_images = sum(len(image_list) for image_list in training_image_dict.values())
 
         loss_over_time = []
@@ -406,17 +436,29 @@ class NeuralNetwork:
         return TrainingHistory(loss_over_time, session_list, loss_table_list)
 
     def evaluate(self, image_dict, encoded_label_dict, use_release_maps=True):
-        """
+        """Return the mean loss per example and the accuracy (%) without updating anything.
+
         This function measures performance without updating any weights or biases. It returns the
         mean cross-entropy loss per example (-sum(label * log(output + LOG_EPSILON)), the same definition
         used in feedback()) and the accuracy percentage (argmax of the output layer vs argmax of
         the encoded label).
 
+        Parameters
+        ----------
+        image_dict : dict
+            Image class name (key)-list of image vectors (value) pairs to evaluate.
+        encoded_label_dict : dict
+            Image class name (key)-encoded class label (value) pairs.
+        use_release_maps : bool
+            Whether to use release maps in the forward pass.
+
         Returns
         -------
-        mean_loss_per_example, accuracy_percent
+        mean_loss_per_example : float
+            Mean cross-entropy loss per image.
+        accuracy_percent : float
+            Percentage of images whose highest-probability output node is the true class.
         """
-
         total_loss = 0.0
         num_correct = 0
         num_images = 0
@@ -432,7 +474,8 @@ class NeuralNetwork:
         return total_loss / num_images, (num_correct / num_images) * 100
 
     def test(self, test_image_dict, encoded_label_dict, use_release_maps=True):
-        """
+        """Test the network on new images; print and return the accuracy percentage.
+
         This function tests the neural network on classifying new image (distinct for those in the
         training image set) according to the image classes the network learned in training.
 
@@ -460,15 +503,18 @@ class NeuralNetwork:
 
         Parameters
         ----------
-        test_image_dict
-        encoded_label_dict
-        use_release_maps
+        test_image_dict : dict
+            Image class name (key)-list of image vectors (value) pairs used for testing.
+        encoded_label_dict : dict
+            Image class name (key)-encoded class label (value) pairs.
+        use_release_maps : bool
+            Whether to use release maps in the forward pass (default True, as in training).
 
         Returns
         -------
-        accuracy
+        float
+            Percentage of test images classified correctly.
         """
-
         num_correct = 0
 
         for image_class, image_list in test_image_dict.items():

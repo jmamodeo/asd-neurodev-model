@@ -1,3 +1,5 @@
+"""Plot and export the loss of a training run (the plot and table that main.py writes to results/)."""
+
 import datetime
 import os
 
@@ -12,12 +14,12 @@ SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split(".")[:
 # Below are functions for analyzing and plotting neural network data
 
 def make_results_directory():
-    """
+    """Create the folder for the results of this run and return its path.
+
     This function makes (if needed) a result folder named according to the current date and time
     in the 'results' directory of the model, also creating 'results' if it is missing, and returns its path.
     Call it once so the plot and the table of one training run end up in the same folder.
     """
-
     parent_dir = os.getcwd() + "/results/"
     child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
     os.makedirs(parent_dir + child_dir, exist_ok=True)
@@ -25,7 +27,8 @@ def make_results_directory():
 
 
 def plot_loss_over_time(loss_over_time_list, session_list, results_directory=None):
-    """
+    """Plot the mean loss per session with bootstrapped 95% confidence intervals and save the plot.
+
     This function takes a list of loss over time (which contains the losses calculated for
     each image in a given session) and a list of session numbers that correspond to each loss
     value. It calculates the mean loss for each session using its associated losses repeatedly
@@ -38,10 +41,13 @@ def plot_loss_over_time(loss_over_time_list, session_list, results_directory=Non
 
     Parameters
     ----------
-    loss_over_time_list
-    session_list
+    loss_over_time_list : list of float
+        The loss of every image in every session.
+    session_list : list of int
+        The session number of each value in loss_over_time_list.
+    results_directory : str, optional
+        Folder for the plot (default: a new folder from make_results_directory()).
     """
-
     # seaborn 0.13+ replaced 'scale' and 'errwidth' with Line2D keywords and err_kws, and markers must be a
     # single style (not a list) when there is no hue; the older keywords are kept for the pinned seaborn 0.12
     if SEABORN_0_13_OR_NEWER:
@@ -74,7 +80,8 @@ def plot_loss_over_time(loss_over_time_list, session_list, results_directory=Non
 
 
 def export_loss_table(loss_table_list, session_list, results_directory=None):
-    """
+    """Save the loss of every image class in every session as an Excel table.
+
     This function takes a loss table list comprised of dictionaries with image class (key)-list
     of image class losses (value) pairs and iterates over it (list comprehension) to convert
     each dictionary to a pandas dataframe. These dataframes are concatenated for a final
@@ -88,10 +95,13 @@ def export_loss_table(loss_table_list, session_list, results_directory=None):
 
     Parameters
     ----------
-    loss_table_list
-    session_list
+    loss_table_list : list of dict
+        For each session, image class (key)-list of image class losses (value) pairs.
+    session_list : list of int
+        The session number of each loss (used to label the sessions in the table).
+    results_directory : str, optional
+        Folder for the table (default: a new folder from make_results_directory()).
     """
-
     loss_dfs = [pd.DataFrame(x) for x in loss_table_list]
     final_df = pd.concat(loss_dfs, keys=sorted(set(session_list)))
 

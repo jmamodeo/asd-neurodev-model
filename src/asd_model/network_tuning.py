@@ -1,3 +1,5 @@
+"""Functions used by the network: CCL5 release maps, sigmoid and softmax."""
+
 import numpy as np
 
 # Poisson draws are divided by this so that a release map is centered on 1 when ccl5_delta is 0
@@ -8,7 +10,8 @@ POISSON_MEAN_SCALE = 100
 
 
 def get_release_maps(layer_weights, ccl5_delta):
-    """
+    """Draw one Poisson release map for every weight matrix.
+
     This function takes the dimensions of the weight matrix for each layer
     and creates a matrix of random values with the same dimensions. The random
     values are selected from a poisson distribution whose mean is 100 * (1 + ccl5 delta),
@@ -22,25 +25,28 @@ def get_release_maps(layer_weights, ccl5_delta):
 
     Parameters
     ----------
-    layer_weights
-    ccl5_delta
+    layer_weights : list of numpy.ndarray
+        The weight matrices of the network (only their shapes are used).
+    ccl5_delta : float
+        Fold change of CCL5 above normal (0 = normal); sets the mean of the release maps.
 
     Returns
     -------
-    release_maps
+    list of numpy.ndarray
+        One release map per weight matrix, with the same shape as the matrix.
     """
-
     synaptic_potential = POISSON_MEAN_SCALE * (1 + ccl5_delta)
 
     release_maps = []
     for weights in layer_weights:
-        release_map = np.random.poisson(synaptic_potential, size=(weights.shape[0], weights.shape[1])) / POISSON_MEAN_SCALE
+        release_map = np.random.poisson(synaptic_potential, size=weights.shape[:2]) / POISSON_MEAN_SCALE
         release_maps.append(release_map)
     return release_maps
 
 
 def apply_sigmoid(layer):
-    """
+    """Squash the activity of every node of a layer into the range 0-1 with a sigmoid.
+
     This function takes a layer of the network and applies a sigmoid function to the
     values in each of its nodes. The sigmoid function puts the node value as the negative
     exponent of Euler's number (1 / 2.718**node value), adds 1 to this, then divides 1 by
@@ -53,19 +59,21 @@ def apply_sigmoid(layer):
 
     Parameters
     ----------
-    layer
+    layer : numpy.ndarray
+        The activity of the nodes of a layer.
 
     Returns
     -------
-    constrained_activity
+    numpy.ndarray
+        The sigmoid of every node value.
     """
-
     constrained_activity = 1 / (1 + np.exp(-layer))
     return constrained_activity
 
 
 def apply_softmax(layer):
-    """
+    """Turn the activity of the output layer into image class probabilities with a softmax.
+
     This function takes the output layer of the network, finds the value of the largest
     node, subtracts each node value by this max value, and places the negative result as the
     exponent of Euler's number (1 / 2.718**node value). These values are then each divided
@@ -87,13 +95,14 @@ def apply_softmax(layer):
 
     Parameters
     ----------
-    layer
+    layer : numpy.ndarray
+        The activity of the output layer, one column per image.
 
     Returns
     -------
-    image_class_probs
+    numpy.ndarray
+        The probability of every image class (each column sums to 1).
     """
-
     # Subtract the max for numerical stability, then normalise along axis 0 (column vectors)
     node_deltas = np.exp(layer - np.max(layer, axis=0, keepdims=True))
     image_class_probs = node_deltas / node_deltas.sum(axis=0)

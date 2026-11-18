@@ -1,4 +1,5 @@
-"""
+"""Image loading and label encoding for the network (with notes for readers new to python).
+
 (This is a 'doc string' specified by 3 quotes at the beginning and end. This
 allows you to write comments to other programmers that the computer just ignores.)
 
@@ -18,15 +19,16 @@ import numpy as np
 
 """
 Below is a collection of functions that we will call in our main.py file to help us
-do visual processing in our model. When a line of code starts with 'def', it is a 
+do visual processing in our model. When a line of code starts with 'def', it is a
 function. After 'def' comes the name of the function, which is what we will use to call
-it and its associated instructions in main.py. Look up 'functions python' online. 
+it and its associated instructions in main.py. Look up 'functions python' online.
 """
 
 
 def image_to_matrix(image_directory, class_list, vector_size):
     # The words inside the () are called 'parameters'. Look up 'python parameters' and 'arguments'.
-    """
+    """Load the images of each class folder as a dictionary of image vectors.
+
     Under every function, it is good to write a description of what it does.
     This function collects images of the specified image class from the image dir and
     reads them as pictures, converts each to grayscale, resizes it to a square, and flattens it into a
@@ -34,15 +36,18 @@ def image_to_matrix(image_directory, class_list, vector_size):
 
     Parameters
     ----------
-    image_directory : folder holding one sub-folder of images per image class
-    class_list : names of the class sub-folders to load (these become the dictionary keys)
-    vector_size : length of each image vector; images are resized to sqrt(vector_size) x sqrt(vector_size)
+    image_directory : str
+        Folder holding one sub-folder of images per image class.
+    class_list : list of str
+        Names of the class sub-folders to load (these become the dictionary keys).
+    vector_size : int
+        Length of each image vector; images are resized to sqrt(vector_size) x sqrt(vector_size).
 
     Returns
     -------
-    image_dict : dictionary of image class (key)-list of (vector_size x 1) image vectors (value) pairs
+    dict
+        Image class (key)-list of (vector_size x 1) image vectors (value) pairs.
     """
-
     image_dict = {}  # Setting the 'variable' equal to an empty 'dictionary'. Look up words in '' with 'python'.
 
     for image_class in class_list:
@@ -64,7 +69,8 @@ def image_to_matrix(image_directory, class_list, vector_size):
             normalized_matrix = resized_matrix.astype(np.float32) / 255.0
             # Turning values into percentage of 255 so all of them are comparable, important for machine learning
 
-            image_vector = normalized_matrix.flatten().reshape(-1, 1)  # Flattens matrix and shapes it as vector_size x 1
+            image_vector = normalized_matrix.flatten().reshape(-1, 1)
+            # Flattens matrix and shapes it as vector_size x 1
             vector_list.append(image_vector)  # Using the 'append' method to add the image vector to the vector list
 
         image_dict[image_class] = vector_list
@@ -74,19 +80,21 @@ def image_to_matrix(image_directory, class_list, vector_size):
 
 
 def encode_image_labels(image_dict):
-    """
+    """Encode the image class names as column vectors of 0s with a single 1.
+
     This function turns string labels for image class (e.g., 'dog') into a
     numpy array that encodes the image label in a series of 0s and 1s.
 
     Parameters
     ----------
-    image_dict
+    image_dict : dict
+        Image class name (key)-list of image vectors (value) pairs; only the keys (and their order) are used.
 
     Returns
     -------
-    encoded_label_dict
+    dict
+        Image class name (key)-encoded label (value) pairs, each label a (number of classes x 1) column vector.
     """
-
     encoded_label_dict = {}  # Creating empty 'dictionary', look up
     class_count = len(image_dict.keys())  # Counting classes in image dict passed into function and saving in variable
 
