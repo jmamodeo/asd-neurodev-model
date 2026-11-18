@@ -1,6 +1,7 @@
+from typing import NamedTuple
+
 import numpy as np
 
-from asd_model.loss_outputs import export_loss_table, plot_loss_over_time
 from asd_model.network_tuning import apply_sigmoid, apply_softmax, get_release_maps
 
 # Default learning rate. A learning rate of 0.1 makes the N(0,1)-initialised network unstable (shuffled training,
@@ -19,6 +20,14 @@ ASD_CCL5_DELTA = 0.40467
 
 # Small value added inside the logarithm of the cross-entropy loss so that log(0) never happens
 LOG_EPSILON = 1e-10
+
+
+class TrainingHistory(NamedTuple):
+    """What NeuralNetwork.train() returns (the inputs of plot_loss_over_time() and export_loss_table())."""
+
+    loss_over_time: list  # the loss of every image in every session, in presentation order
+    session_list: list  # the session number of each value in loss_over_time
+    loss_table_list: list  # for each session: image class (key)-list of losses (value) pairs
 
 
 # Below is the Neural Network class with its functions for neural network creation, training, and testing.
@@ -341,8 +350,8 @@ class NeuralNetwork:
 
         Loss values for each session are also stored in a list with its corresponding session number
         stored in a sessions number list. The loss over time list is used in conjunction with the
-        list of session numbers to plot mean loss over sessions with plot_loss_over_time(),see
-        loss_outputs.py. This plot is rendered after training is complete.
+        list of session numbers to plot mean loss over sessions with plot_loss_over_time(), see
+        loss_outputs.py.
 
         The loss values for each image class are stored in a class losses list. After training on an
         image class, the associated class losses list is added to a loss table dictionary, with the
@@ -350,12 +359,26 @@ class NeuralNetwork:
         the loss table dictionary is added to a loss table list. This is combined with the session
         number list mentioned above to create a loss dataframe that is exported to Excel.
 
+        Training only returns these values (as a TrainingHistory) and writes nothing to disk: the
+        caller decides whether to plot and export them (main.py calls plot_loss_over_time() and
+        export_loss_table() after training).
+
         Parameters
         ----------
-        training_image_dict
-        encoded_label_dict
-        learning_rate
-        sessions
+        training_image_dict : dict
+            Image class name (key)-list of image vectors (value) pairs used for training.
+        encoded_label_dict : dict
+            Image class name (key)-encoded class label (value) pairs.
+        learning_rate : float
+            Size of the weight updates (default 0.03).
+        sessions : int
+            Number of training sessions (default 100).
+
+        Returns
+        -------
+        TrainingHistory
+            The loss of every image in every session, the session number of each loss, and the per-class loss
+            table of every session.
         """
 
         number_of_images = sum(len(image_list) for image_list in training_image_dict.values())
@@ -380,8 +403,7 @@ class NeuralNetwork:
             print(f"Session: {session + 1} of {sessions}, Loss: {avg_loss:.4f}")
 
         print("Training complete")
-        plot_loss_over_time(loss_over_time, session_list)
-        export_loss_table(loss_table_list, session_list)
+        return TrainingHistory(loss_over_time, session_list, loss_table_list)
 
     def evaluate(self, image_dict, encoded_label_dict, use_release_maps=True):
         """

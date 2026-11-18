@@ -11,7 +11,20 @@ SEABORN_0_13_OR_NEWER = tuple(int(part) for part in sns.__version__.split('.')[:
 
 # Below are functions for analyzing and plotting neural network data
 
-def plot_loss_over_time(loss_over_time_list, session_list):
+def make_results_directory():
+    """
+    This function makes (if needed) a result folder named according to the current date and time
+    in the 'results' directory of the model, also creating 'results' if it is missing, and returns its path.
+    Call it once so the plot and the table of one training run end up in the same folder.
+    """
+
+    parent_dir = os.getcwd() + "/results/"
+    child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
+    os.makedirs(parent_dir + child_dir, exist_ok=True)
+    return parent_dir + child_dir
+
+
+def plot_loss_over_time(loss_over_time_list, session_list, results_directory=None):
     """
     This function takes a list of loss over time (which contains the losses calculated for
     each image in a given session) and a list of session numbers that correspond to each loss
@@ -19,9 +32,9 @@ def plot_loss_over_time(loss_over_time_list, session_list):
     for bootstrapped 95% confidence intervals. These means with confidence intervals are plotted
     over the session numbers found in the session list.
 
-    A result folder, named according to the date and time of training, is made in the 'results'
-    directory of the model if one does not exist already. The plot mentioned above is saved in
-    this result folder as 'training_loss_plot'.
+    The plot mentioned above is saved as 'training_loss_plot' in the result folder given as
+    'results_directory'. If none is given, a result folder named according to the date and time of
+    training is made in the 'results' directory of the model (see make_results_directory()).
 
     Parameters
     ----------
@@ -54,14 +67,13 @@ def plot_loss_over_time(loss_over_time_list, session_list):
         y_max = max(loss_over_time_list)
     plt.ylim(0, y_max)
 
-    parent_dir = os.getcwd() + "/results/"
-    child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
-    os.makedirs(parent_dir + child_dir, exist_ok=True)  # also creates 'results' if it is missing
+    if results_directory is None:
+        results_directory = make_results_directory()
     file_name = "/training_loss_plot.png"
-    plt.savefig(parent_dir + "/" + child_dir + file_name, dpi=300, bbox_inches='tight')
+    plt.savefig(results_directory + file_name, dpi=300, bbox_inches='tight')
 
 
-def export_loss_table(loss_table_list, session_list):
+def export_loss_table(loss_table_list, session_list, results_directory=None):
     """
     This function takes a loss table list comprised of dictionaries with image class (key)-list
     of image class losses (value) pairs and iterates over it (list comprehension) to convert
@@ -70,9 +82,9 @@ def export_loss_table(loss_table_list, session_list):
     the second leftmost column, and calculated loss according to image class in the remaining
     columns (column headers reflect image class names).
 
-    A result folder, named according to the date and time of training, is made in the 'results'
-    directory of the model if one does not exist already. The dataframe mentioned above is saved in
-    this result folder as 'training_loss_table'.
+    The dataframe mentioned above is saved as 'training_loss_table' in the result folder given as
+    'results_directory'. If none is given, a result folder named according to the date and time of
+    training is made in the 'results' directory of the model (see make_results_directory()).
 
     Parameters
     ----------
@@ -83,8 +95,7 @@ def export_loss_table(loss_table_list, session_list):
     loss_dfs = [pd.DataFrame(x) for x in loss_table_list]
     final_df = pd.concat(loss_dfs, keys=sorted(set(session_list)))
 
-    parent_dir = os.getcwd() + "/results/"
-    child_dir = datetime.datetime.now().strftime("%Y-%m-%d %Hh%Mm") + " results"
-    os.makedirs(parent_dir + child_dir, exist_ok=True)  # also creates 'results' if it is missing
+    if results_directory is None:
+        results_directory = make_results_directory()
     file_name = "/training_loss_table.xlsx"
-    final_df.to_excel(parent_dir + child_dir + file_name, sheet_name="Loss per Class per Session")
+    final_df.to_excel(results_directory + file_name, sheet_name="Loss per Class per Session")

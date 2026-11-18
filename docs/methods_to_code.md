@@ -17,9 +17,9 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 | Cross-entropy loss; the same release maps in the backward pass | `NeuralNetwork.feedback()` | Output delta is `p - label`; gradients flow through the effective weights `W * M` |
 | Gradient clipping (global norm 1.0) | `NeuralNetwork.feedback()` (`max_gradient_norm`) | |
 | One session = one pass over all images in shuffled, class-mixed order | `NeuralNetwork.run_session()` | `np.random.permutation` |
-| Training for a number of sessions; mean loss per training example | `NeuralNetwork.train()` | Default 100 sessions; learning rate 0.03 (`DEFAULT_LEARNING_RATE`) |
+| Training for a number of sessions; mean loss per training example | `NeuralNetwork.train()` | Default 100 sessions; learning rate 0.03 (`DEFAULT_LEARNING_RATE`). Returns a `TrainingHistory`; writes no files |
 | Held-out accuracy (argmax of the output vs the label) and loss | `NeuralNetwork.evaluate()`, `NeuralNetwork.test()` | Chance is 25% with four classes |
-| Loss plot and spreadsheet from `main.py` | `loss_outputs.plot_loss_over_time()`, `loss_outputs.export_loss_table()` | Written to `results/<date> results/` |
+| Loss plot and spreadsheet from `main.py` | `loss_outputs.plot_loss_over_time()`, `loss_outputs.export_loss_table()` | Written to `results/<date> results/` by `main.py` after `train()` returns |
 
 ## The experiment and analysis
 

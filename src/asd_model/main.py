@@ -1,6 +1,7 @@
 import argparse
 import os
 
+from asd_model.loss_outputs import export_loss_table, make_results_directory, plot_loss_over_time
 from asd_model.neural_network import (
     ASD_CCL5_DELTA,
     ASD_WNT_DELTA,
@@ -53,7 +54,13 @@ if __name__ == '__main__':
     # This is the command to train the neural network
     # You can alter the learning rate ('learning_rate', --learning-rate) to make the size of weight updates bigger or smaller (default 0.03)
     # You can alter 'sessions' to change how many times the neural network runs the full image set during training
-    net.train(train_image_dict, encoded_label_dict, learning_rate=args.learning_rate, sessions=args.sessions)
+    training_history = net.train(train_image_dict, encoded_label_dict, learning_rate=args.learning_rate, sessions=args.sessions)
+
+    # These are the commands to plot the mean loss over the sessions and to export the loss table to Excel
+    # Both files are saved in a new folder in 'results', named according to the date and time
+    results_directory = make_results_directory()
+    plot_loss_over_time(training_history.loss_over_time, training_history.session_list, results_directory)
+    export_loss_table(training_history.loss_table_list, training_history.session_list, results_directory)
 
     # This is the command to test the neural network
     # You can set 'use_release_maps' to 'True'/'False' for biological dynamic weighting of signals or fixed weighting
