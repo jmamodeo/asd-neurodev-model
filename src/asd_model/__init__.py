@@ -5,3 +5,5 @@ analyze_data (the loss plot and table written by main), experiment / analysis / 
 runs, statistics and figures). Run one network with `python -m asd_model`; re-create the paper's figures and tables with
 `python -m asd_model.reproduce` (or `python reproduce.py` in the repository root).
 """
+
+__version__ = "1.0.0"

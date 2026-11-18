@@ -96,7 +96,7 @@ docs/paper/             Paper (PDF and Markdown source), analysis plan, referenc
 docs/methods_to_code.md Which function implements which step of the paper's Methods
 tests/                  pytest tests
 pyproject.toml          Package metadata, pinned dependencies, console scripts
-requirements.txt        The same pinned package versions, for `pip install -r`
+requirements.txt        `-e .[test]`, so that `pip install -r requirements.txt` still works
 image_set/, results/    Empty folders for your images and for main.py output
 ```
 
@@ -104,7 +104,7 @@ image_set/, results/    Empty folders for your images and for main.py output
 
 Python 3.11 is the version used in the paper. The pinned package versions were verified to run `main.py` and `reproduce.py` end to end on Python 3.11 (the tests also pass on 3.12). Current seaborn and pandas releases also run `main.py`, but the pinned versions are the ones the paper's results were produced with.
 
-Install the package in editable mode from the repository root. This puts `asd_model` on the import path and installs the pinned dependencies (`pyproject.toml` and `requirements.txt` list the same versions):
+Install the package in editable mode from the repository root. This puts `asd_model` on the import path and installs the pinned dependencies (`pyproject.toml` is the single source of the pinned versions):
 
 ```bash
 python3.11 -m venv venv
@@ -213,7 +213,7 @@ python reproduce.py            # or ./reproduce.sh, make figures, python -m asd_
 - `--quick` is a smoke test (3 seeds, 20 sessions, CIFAR-10 only) writing to `figures_quick/` and `tables_quick/`.
 - `--seeds N`, `--sessions N` change the number of seeds (default 20) and sessions (default 100).
 - Seeds are fixed. On the same machine and library versions a retrained run reproduces the shipped run bit for bit. Across different numpy/BLAS builds the first training session agrees to about 1e-4 but float32 rounding differences are amplified by the training dynamics, so individual curves differ while the group statistics agree.
-- Rebuild the paper PDF with `pip install -r docs/paper/requirements.txt && python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
+- Rebuild the paper PDF with `pip install -e .[paper] && python docs/paper/build_paper.py` (numbers are filled in from `tables/`; run `python reproduce.py` first). The pre-specified analysis plan is in `docs/paper/analysis_plan.md`.
 
 ## Methods-to-code map
 

@@ -1,3 +1,0 @@
-# Only needed to rebuild docs/paper/paper.pdf (python docs/paper/build_paper.py)
-Markdown==3.11.3
-weasyprint==70.0

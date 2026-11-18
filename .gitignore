@@ -24,3 +24,11 @@ run_cache/
 image_set_cifar3/
 figures_quick/
 tables_quick/
+
+# Tool caches and local environments
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.env

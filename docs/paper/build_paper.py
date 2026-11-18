@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Build the revised paper PDF from paper.md (+ references.md) with numbers filled in from tables/statistics_*.json.
 
-    pip install -r docs/paper/requirements.txt
+    pip install -e .[paper]
     python reproduce.py            # regenerates figures/ and tables/ (fast: uses the distributed run cache)
     python docs/paper/build_paper.py
 

@@ -1,20 +1,20 @@
 [project]
 name = "asd-neurodev-model"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Python neural-network model of how elevated Wnt/mTOR-CCL5 signaling in autism spectrum disorder could slow learning in a visual image-classification network."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "John Amodeo" }, { name = "Rithvik Marri" }]
 keywords = ["neuroscience", "computational-neuroscience", "neural-network", "autism", "wnt", "mtor", "ccl5"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "License :: OSI Approved :: MIT License",
 ]
 # Python 3.11 is the version used in the paper; 3.12 also passes the tests with these pinned versions.
 requires-python = ">=3.11,<3.13"
-# Same pins as requirements.txt (the versions verified to run the model and reproduce.py).
+# Pinned to the versions verified to run the model and reproduce.py (this file is the single source for the pins).
 dependencies = [
     "opencv-python==4.8.1.78",
     "numpy==1.26.4",
@@ -40,11 +40,30 @@ asd-model = "asd_model.__main__:main"
 asd-reproduce = "asd_model.reproduce:main"
 
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.dynamic]
+version = { attr = "asd_model.__version__" }  # CITATION.cff and the git tag must match (tests/test_metadata.py)
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "B", "SIM", "UP", "D"]
+# Keeps the original "This function ..." docstring voice; B905 (zip strict=) is checked by hand where lengths could differ.
+ignore = ["D203", "D213", "D404", "D401", "SIM108", "B905"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "N806"]
+"scripts/*" = ["D103"]
