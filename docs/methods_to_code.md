@@ -43,4 +43,4 @@ Where each step described in the paper's Methods (`docs/paper/paper.md`) lives i
 
 ## Checks
 
-`tests/test_model_learning_rules.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet and that `python -m asd_model` starts.
+`tests/test_model_learning_rules.py` checks the model's learning rules (softmax output, release maps in the backward pass, shuffling, accuracy from the output layer). `tests/test_reproduce.py` checks that the shipped runs reproduce the paper's numbers and that runs are deterministic. `tests/test_main_outputs.py` checks that a short training run writes the plot and spreadsheet and that `python main.py` starts and rejects abbreviated options.
