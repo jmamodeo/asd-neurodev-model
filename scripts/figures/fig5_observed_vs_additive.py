@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-"""Figure 7: final loss, sessions to chance-level loss and held-out accuracy, learning rate 0.03 (figures/summary_lr0.03.png).
+"""Figure 5: observed vs additive effect of Wnt and CCL5, learning rate 0.03 (figures/observed_vs_additive_lr0.03.png).
 
 Runs only the training runs this output needs (shared cache: run_cache/ and the shipped reproduce_data/), then plots.
 Options: --quick, --retrain, --workers N, --seeds N, --sessions N, --original-images DIR (see `python reproduce.py --help`).
 
-    python scripts/figures/fig7_summary.py
+    python scripts/figures/fig5_observed_vs_additive.py
 """
 import os
 import sys
@@ -13,4 +13,4 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import reproduce  # noqa: E402
 
 if __name__ == "__main__":
-    reproduce.main(only=["fig7"])
+    reproduce.main(only=["fig5"])

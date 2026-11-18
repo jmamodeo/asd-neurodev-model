@@ -11,12 +11,12 @@ What it does
   2. Missing runs are trained (CIFAR-10 is downloaded automatically with scripts/fetch_cifar10.py), in parallel (--workers).
   3. Statistics, tables and figures are written to figures/ and tables/.
 
-Individual figures: scripts/figures/fig1_model_schematic.py ... fig7_summary.py, figS1_..., figS2_..., figS3_... and tables.py each
+Individual figures: scripts/figures/fig1_model_schematic.py ... fig6_summary.py, figS1_..., figS2_..., figS3_... and tables.py each
 build just that figure (training only the runs it needs, sharing the run cache); the same is available here as
 python reproduce.py --only fig3 fig4 ...  (fig1 and fig2 need no training runs).
 
 Useful options
-  --only NAME [NAME ...]   build only these outputs: fig1 ... fig7 figS1 figS2 figS3 tables (default: everything)
+  --only NAME [NAME ...]   build only these outputs: fig1 ... fig6 figS1 figS2 figS3 tables (default: everything)
   --retrain                ignore the distributed cache and retrain everything from scratch (hours; see README)
   --quick                  smoke test: 3 seeds, 20 sessions, CIFAR-10 only, outputs in figures_quick/ and tables_quick/
   --workers N              parallel training processes (default: number of CPU cores)
@@ -99,9 +99,9 @@ def collect_runs(run_dir, datasets, seeds, sessions, lr):
 
 FIGURES = {   # name: (learning rate or None, kind); the file written is figures/<kind>_lr<lr>.png (figures/<kind>.png without runs)
     "fig1": (None, "model_schematic"), "fig2": (None, "release_map_distributions"),
-    "fig3": (0.03, "loss_curves"), "fig4": (0.03, "sessions_to_criterion"), "fig5": (0.03, "auc_interaction"),
-    "fig6": (0.03, "observed_vs_additive"), "fig7": (0.03, "summary"),
-    "figS1": (0.1, "loss_curves"), "figS2": (0.1, "auc_interaction"), "figS3": (0.1, "summary"),
+    "fig3": (0.03, "loss_curves"), "fig4": (0.03, "sessions_to_criterion"),
+    "fig5": (0.03, "observed_vs_additive"), "fig6": (0.03, "summary"),
+    "figS1": (0.1, "loss_curves"), "figS2": (0.1, "observed_vs_additive"), "figS3": (0.1, "summary"),
 }
 ALL_OUTPUTS = list(FIGURES) + ["tables"]
 

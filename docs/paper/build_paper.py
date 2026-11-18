@@ -99,19 +99,25 @@ def table(name, S):
     return "\n".join(out)
 
 
-def main():
-    with open(os.path.join(HERE, "paper.md")) as f:
-        md = f.read()
-    with open(os.path.join(HERE, "references.md")) as f:
-        refs = f.read()
+def build(md, out, refs=None, css_extra=""):
+    """Render markdown text (with {{...}} placeholders) to a PDF at `out`."""
+    if refs is None:
+        with open(os.path.join(HERE, "references.md")) as f:
+            refs = f.read()
     md = md.replace("{{REFERENCES}}", refs)
     md = re.sub(r"\{\{([^}]+)\}\}", resolve, md)
     html = markdown.markdown(md, extensions=["extra", "sane_lists", "md_in_html"])
     with open(os.path.join(HERE, "style.css")) as f:
-        css = f.read()
+        css = f.read() + css_extra
     doc = f"<html><head><meta charset='utf-8'><style>{css}</style></head><body>{html}</body></html>"
-    out = os.path.join(HERE, "paper.pdf")
     HTML(string=doc, base_url=HERE + "/").write_pdf(out)
+
+
+def main():
+    with open(os.path.join(HERE, "paper.md")) as f:
+        md = f.read()
+    out = os.path.join(HERE, "paper.pdf")
+    build(md, out)
     print("wrote", out)
 
 

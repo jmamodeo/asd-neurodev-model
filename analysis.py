@@ -18,6 +18,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+# Figures are drawn at the printed width of the paper (6.5 in) so that all text is at least 8 pt on the page.
+PAGE_WIDTH = 6.5
+plt.rcParams.update({"font.size": 8.5, "axes.titlesize": 9, "axes.labelsize": 8.5, "xtick.labelsize": 8, "ytick.labelsize": 8,
+                     "legend.fontsize": 8, "legend.title_fontsize": 8, "figure.titlesize": 9, "lines.linewidth": 1.4})
+FIG_HEIGHT = {"loss_curves": 5.6, "sessions_to_criterion": 3.0, "observed_vs_additive": 5.2, "summary": 4.8}   # inches
+
 CONDS = ["control", "ccl5", "wnt", "both"]
 LABEL = {"control": "Control", "ccl5": "CCL5", "wnt": "Wnt", "both": "Wnt + CCL5"}
 COLOR = {"control": "#444444", "ccl5": "#1f77b4", "wnt": "#d62728", "both": "#9467bd"}
@@ -150,44 +156,32 @@ def _by_key(runs):
     return out
 
 
-def figure_loss_curves(runs, path, title):
+def figure_loss_curves(runs, path, title, height=None):
     by = _by_key(runs); datas = sorted({d["data"] for d in runs})
-    fig, axs = plt.subplots(2, len(datas), figsize=(4.8 * len(datas), 6.4), squeeze=False, sharex=True)
+    fig, axs = plt.subplots(2, len(datas), figsize=(PAGE_WIDTH, height or FIG_HEIGHT["loss_curves"]), squeeze=False, sharex=True, sharey="row")
     for j, data in enumerate(datas):
-        for i, (key, name) in enumerate((("train_loss", "training loss (mean per example)"), ("val_loss", "held-out loss"))):
+        for i, (key, name) in enumerate((("train_loss", "training loss"), ("val_loss", "held-out loss"))):
             ax = axs[i, j]
             for c in CONDS:
                 A = np.array([r[key] for r in by[(data, c)]]); n = len(A)
                 m = A.mean(0); h = stats.t.ppf(.975, n - 1) * A.std(0, ddof=1) / np.sqrt(n); x = np.arange(1, A.shape[1] + 1)
-                ax.plot(x, m, color=COLOR[c], label=f"{LABEL[c]} (n={n})"); ax.fill_between(x, m - h, m + h, color=COLOR[c], alpha=.18)
-            ax.axhline(LN4, color="k", lw=.6, ls=":"); ax.set_ylabel("cross-entropy"); ax.set_title(f"{DATA_LABEL.get(data, data)}: {name}")
-            ax.legend(fontsize=8)
+                ax.plot(x, m, color=COLOR[c], label=LABEL[c]); ax.fill_between(x, m - h, m + h, color=COLOR[c], alpha=.18)
+            ax.axhline(LN4, color="k", lw=.6, ls=":")
+            if j == 0:
+                ax.set_ylabel(f"{name} (cross-entropy)")
+            if i == 0:
+                ax.set_title(DATA_LABEL.get(data, data))
+            if i == 0 and j == 0:
+                ax.legend(loc="upper right")
             if i == 1:
                 ax.set_xlabel("training session")
-    fig.suptitle(f"{title}\nmean ± 95% CI over seeds (dotted line = chance-level loss ln 4)"); fig.tight_layout()
-    fig.savefig(path, dpi=150); plt.close(fig)
+    fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
 
 
-def figure_auc_interaction(df, stat, path, title):
-    datas = sorted(df.data.unique())
-    fig, axs = plt.subplots(1, len(datas), figsize=(4.4 * len(datas), 3.9), squeeze=False)
-    for j, data in enumerate(datas):
-        ax = axs[0, j]; d = df[df.data == data]
-        for ccl, ls in ((0, "-"), (1, "--")):
-            ms, hs = zip(*[_ci(d[(d.wnt == w) & (d.ccl5 == ccl)].auc) for w in (0, 1)])
-            ax.errorbar([0, 1], ms, yerr=hs, marker="o", ls=ls, capsize=4, label="CCL5 on" if ccl else "CCL5 off")
-        m = [_ci(d[(d.wnt == w) & (d.ccl5 == c)].auc)[0] for w, c in ((0, 0), (1, 0), (0, 1), (1, 1))]
-        ax.plot([0, 1], [m[2], m[2] + (m[1] - m[0])], color="gray", lw=.8, ls=":", label="additive prediction")
-        ax.set_xticks([0, 1]); ax.set_xticklabels(["Wnt off", "Wnt on"]); ax.set_ylabel("AUC (mean training loss)")
-        p = stat[data]["anova"]["auc"]["Wnt x CCL5"]["p"]
-        ax.set_title(f"{DATA_LABEL.get(data, data)}\nWnt x CCL5 interaction p = {p:.2g}"); ax.legend(fontsize=8)
-    fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
-
-
-def figure_sessions_to_criterion(df, sessions, path, title):
+def figure_sessions_to_criterion(df, sessions, path, title, height=None):
     """Cumulative fraction of networks whose training loss has reached the chance-level loss (ln 4) by each session."""
     datas = sorted(df.data.unique())
-    fig, axs = plt.subplots(1, len(datas), figsize=(4.5 * len(datas), 4.0), squeeze=False, sharey=True)
+    fig, axs = plt.subplots(1, len(datas), figsize=(PAGE_WIDTH, height or FIG_HEIGHT["sessions_to_criterion"]), squeeze=False, sharey=True)
     for j, data in enumerate(datas):
         ax = axs[0, j]
         for c in CONDS:
@@ -195,15 +189,14 @@ def figure_sessions_to_criterion(df, sessions, path, title):
             x = np.arange(0, sessions + 1)
             y = np.array([(t <= k).mean() for k in x])
             med = np.median(t)
-            lab = f"{LABEL[c]} (median {med:g})" if med <= sessions else f"{LABEL[c]} (median not reached)"
+            lab = f"{LABEL[c]}: {med:g}" if med <= sessions else f"{LABEL[c]}: not reached"
             ax.step(x, y, where="post", color=COLOR[c], lw=2, label=lab)
         ax.set_xlabel("training session"); ax.set_title(DATA_LABEL.get(data, data))
-        ax.set_ylim(-0.02, 1.02); ax.legend(fontsize=8, loc="lower right", title="median sessions to reach", title_fontsize=8)
+        ax.set_ylim(-0.02, 1.02); ax.legend(loc="lower right", title="median session")
         if j == 0:
-            ax.set_ylabel("fraction of networks with training loss below ln 4")
-    n = int(df.groupby(["data", "cond"]).size().min())
-    fig.suptitle(f"{title}\nChance-level loss (ln 4 = {LN4:.2f}) reached, n = {n} networks per condition")
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+            ax.set_ylabel("fraction of networks that\nreached chance-level loss")
+    fig.suptitle(title)
+    fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
 
 
 def _matched_arrays(d, y):
@@ -228,12 +221,12 @@ def observed_vs_additive(d, y, n_boot=10000, seed=0):
     return out
 
 
-def figure_observed_vs_additive(df, stat, path, title):
+def figure_observed_vs_additive(df, stat, path, title, height=None):
     datas = sorted(df.data.unique())
     outcomes = (("auc", "AUC (mean training loss)"), ("final_loss", "final training loss"))
-    fig, axs = plt.subplots(len(outcomes), len(datas), figsize=(4.5 * len(datas), 3.5 * len(outcomes)), squeeze=False)
+    fig, axs = plt.subplots(len(outcomes), len(datas), figsize=(PAGE_WIDTH, height or FIG_HEIGHT["observed_vs_additive"]), squeeze=False)
     cats = ["control", "ccl5", "wnt", "both", "additive"]
-    names = ["Control", "CCL5", "Wnt", "Wnt + CCL5\n(observed)", "Additive\nprediction"]
+    names = ["Control", "CCL5", "Wnt", "Both (observed)", "Additive prediction"]
     for i, (y, yl) in enumerate(outcomes):
         for j, data in enumerate(datas):
             ax = axs[i, j]; E = observed_vs_additive(df[df.data == data], y)
@@ -244,23 +237,22 @@ def figure_observed_vs_additive(df, stat, path, title):
                 else:
                     ax.errorbar(k, m, yerr=[[m - lo], [hi - m]], fmt="o", color=COLOR[c], capsize=4, ms=8, lw=1.5)
             ax.axhline(E["additive"][0], color="gray", lw=.8, ls=":")
-            ax.set_xticks(range(len(cats))); ax.set_xticklabels(names, fontsize=8.5); ax.set_ylabel(yl)
+            ax.set_xticks(range(len(cats))); ax.set_xticklabels(names, rotation=30, ha="right"); ax.set_ylabel(yl)
             ax.set_xlim(-0.5, len(cats) - 0.5)
             lo_, hi_ = ax.get_ylim(); ax.set_ylim(lo_, hi_ + 0.3 * (hi_ - lo_))
             ia, il, ih = E["interaction"]; p = stat[data]["anova"][y]["Wnt x CCL5"]["p"]
-            ax.set_title(f"{DATA_LABEL.get(data, data)}", fontsize=10)
-            ax.text(0.03, 0.97, f"observed − additive = {ia:+.2f} [{il:+.2f}, {ih:+.2f}]\nWnt × CCL5 interaction (ANOVA) p = {p:.2g}",
-                    transform=ax.transAxes, ha="left", va="top", fontsize=8.5)
-    fig.suptitle(f"{title}\nMeans with 95% bootstrap CIs over seeds (seed-matched); additive prediction = CCL5 + Wnt − control")
-    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+            ax.set_title(f"{DATA_LABEL.get(data, data)}")
+            ax.text(0.03, 0.97, f"observed − additive = {ia:+.2f} [{il:+.2f}, {ih:+.2f}]\nWnt × CCL5 (ANOVA) p = {p:.2g}",
+                    transform=ax.transAxes, ha="left", va="top", fontsize=8)
+    fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
 
 
-def figure_summary(df, path, title):
+def figure_summary(df, path, title, height=None):
     datas = sorted(df.data.unique()); rng = np.random.default_rng(1)
-    metrics = (("final_loss", "final training loss (last 10 sessions)", None),
-               ("ept_abs", "sessions to reach chance-level loss (ln 4)\n(101 = never reached)", None),
+    metrics = (("final_loss", "final training loss", None),
+               ("ept_abs", "sessions to reach ln 4\n(101 = not reached)", None),
                ("final_val_acc", "held-out accuracy (%)", CHANCE))
-    fig, axs = plt.subplots(len(datas), 3, figsize=(10.5, 3.5 * len(datas)), squeeze=False)
+    fig, axs = plt.subplots(len(datas), 3, figsize=(PAGE_WIDTH, height or FIG_HEIGHT["summary"]), squeeze=False)
     for i, data in enumerate(datas):
         d = df[df.data == data]
         for j, (k, name, ref) in enumerate(metrics):
@@ -270,10 +262,10 @@ def figure_summary(df, path, title):
                 ax.scatter(xi + rng.uniform(-.18, .18, len(v)), v, s=10, color=COLOR[c], alpha=.35)
                 ax.errorbar(xi, m, yerr=h, color="k", marker="D", capsize=4, ms=5)
             if ref is not None:
-                ax.axhline(ref, color="k", ls=":", lw=.8); ax.text(-0.45, ref, "chance", va="bottom", ha="left", fontsize=8)
-            ax.set_xticks(range(4)); ax.set_xticklabels([LABEL[c] for c in CONDS], fontsize=8)
-            ax.set_title(f"{DATA_LABEL.get(data, data)}", fontsize=9); ax.set_ylabel(name, fontsize=8)
-    fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+                ax.axhline(ref, color="k", ls=":", lw=.8)
+            ax.set_xticks(range(4)); ax.set_xticklabels(["Control", "CCL5", "Wnt", "Both"], rotation=35, ha="right")
+            ax.set_title(f"{DATA_LABEL.get(data, data)}"); ax.set_ylabel(name)
+    fig.suptitle(title); fig.tight_layout(); fig.savefig(path, dpi=200); plt.close(fig)
 
 
 def markdown_tables(stat):
@@ -290,25 +282,22 @@ def markdown_tables(stat):
     return "\n".join(lines) + "\n"
 
 
-FIGURE_KINDS = ("loss_curves", "sessions_to_criterion", "auc_interaction", "observed_vs_additive", "summary")
+FIGURE_KINDS = ("loss_curves", "sessions_to_criterion", "observed_vs_additive", "summary")
 
 
-def make_figure(kind, runs, tag, fig_dir, title):
+def make_figure(kind, runs, tag, fig_dir, title, height=None):
     """Write one figure (kind in FIGURE_KINDS) to fig_dir/<kind>_<tag>.png and return its path."""
     os.makedirs(fig_dir, exist_ok=True)
     path = os.path.join(fig_dir, f"{kind}_{tag}.png")
     if kind == "loss_curves":
-        figure_loss_curves(runs, path, title)
-    elif kind == "auc_interaction":
-        df = per_run_table(runs)
-        figure_auc_interaction(df, compute_statistics(df), path, title)
+        figure_loss_curves(runs, path, title, height)
     elif kind == "sessions_to_criterion":
-        figure_sessions_to_criterion(per_run_table(runs), len(runs[0]["train_loss"]), path, title)
+        figure_sessions_to_criterion(per_run_table(runs), len(runs[0]["train_loss"]), path, title, height)
     elif kind == "observed_vs_additive":
         df = per_run_table(runs)
-        figure_observed_vs_additive(df, compute_statistics(df), path, title)
+        figure_observed_vs_additive(df, compute_statistics(df), path, title, height)
     elif kind == "summary":
-        figure_summary(per_run_table(runs), path, title)
+        figure_summary(per_run_table(runs), path, title, height)
     else:
         raise ValueError(kind)
     return path
@@ -331,7 +320,6 @@ def analyze(runs, tag, fig_dir, table_dir, title):
     df = per_run_table(runs); stat = write_tables(runs, tag, table_dir)
     os.makedirs(fig_dir, exist_ok=True)
     figure_loss_curves(runs, os.path.join(fig_dir, f"loss_curves_{tag}.png"), title)
-    figure_auc_interaction(df, stat, os.path.join(fig_dir, f"auc_interaction_{tag}.png"), title)
     figure_sessions_to_criterion(df, len(runs[0]["train_loss"]), os.path.join(fig_dir, f"sessions_to_criterion_{tag}.png"), title)
     figure_observed_vs_additive(df, stat, os.path.join(fig_dir, f"observed_vs_additive_{tag}.png"), title)
     figure_summary(df, os.path.join(fig_dir, f"summary_{tag}.png"), title)
