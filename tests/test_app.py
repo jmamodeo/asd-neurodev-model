@@ -10,8 +10,11 @@ from matplotlib.figure import Figure
 from streamlit.testing.v1 import AppTest
 
 from asd_model.app import (
+    DEFAULT_PRESET,
     DEMO_CLASS_NAMES,
     DEMO_IMAGE_VECTOR_SIZE,
+    DIAGRAM_SHAPE_CAPTION,
+    PRESETS,
     area_under_training_loss,
     demo_images_available,
     demo_layer_sizes,
@@ -103,6 +106,20 @@ def test_page_opens_with_mechanism_pane():
     assert app.title[0].value
     assert len(app.get("image")) >= 2
     assert listed_sizes(app) == demo_layer_sizes(0)
+
+
+def test_default_preset_is_control():
+    assert DEFAULT_PRESET == "Control"
+    assert PRESETS[DEFAULT_PRESET] == (0.0, 0.0)
+    app = new_app()
+    assert not app.exception
+    assert app.radio(key="preset").value == "Control"
+    assert app.slider(key="wnt_delta").value == 0
+    assert app.slider(key="ccl5_delta").value == 0
+    assert listed_sizes(app) == [100, 100, 100, 100, 100, 4]
+    assert listed_sizes(app) == demo_layer_sizes(0)
+    captions = [item.value for item in app.caption]
+    assert DIAGRAM_SHAPE_CAPTION in captions
 
 
 def test_presets_set_sliders():

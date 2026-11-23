@@ -55,6 +55,12 @@ PRESETS = {
     "Wnt + CCL5": (ASD_WNT_DELTA, ASD_CCL5_DELTA),
 }  # label: (wnt_delta, ccl5_delta)
 PRESET_CONDITIONS = {"Control": "control", "CCL5": "ccl5", "Wnt": "wnt", "Wnt + CCL5": "both"}
+DEFAULT_PRESET = "Control"
+DIAGRAM_SHAPE_CAPTION = (
+    "In Control (wnt_delta = 0), every hidden layer stays flat at the input width "
+    "(the 1-to-1 sparse baseline); when wnt_delta > 0, each hidden layer grows by "
+    "(1 + wnt_delta) over the previous layer, so the network flares out only when Wnt is increased."
+)
 LEARNING_RATES = [DEFAULT_LEARNING_RATE, SUPPLEMENT_LEARNING_RATE]
 _trapezoid = getattr(np, "trapezoid", None) or np.trapz  # numpy 1.x only has trapz
 
@@ -542,6 +548,7 @@ def _mechanism_pane(wnt_delta, ccl5_delta):
     st.header("1. Mechanism")
     st.caption("Moves with the sliders in the sidebar; nothing is trained here.")
     _show(plot_network_diagram(wnt_delta, ccl5_delta))
+    st.caption(DIAGRAM_SHAPE_CAPTION)
     sizes = demo_layer_sizes(wnt_delta)
     st.markdown("Layer sizes: " + ", ".join(str(size) for size in sizes))
     st.markdown(f"Hidden synapses: {sum(sizes[i] * sizes[i + 1] for i in range(len(sizes) - 1)):,}")
@@ -602,8 +609,9 @@ def main():
         "release maps; both can slow learning. The live network is a smaller illustration; the paper pane shows "
         "the published 20-seed results."
     )
-    st.session_state.setdefault("wnt_delta", 0.0)
-    st.session_state.setdefault("ccl5_delta", 0.0)
+    st.session_state.setdefault("preset", DEFAULT_PRESET)
+    st.session_state.setdefault("wnt_delta", PRESETS[DEFAULT_PRESET][0])
+    st.session_state.setdefault("ccl5_delta", PRESETS[DEFAULT_PRESET][1])
     with st.sidebar:
         st.header("Controls")
         preset = st.radio("Preset", list(PRESETS), key="preset", on_change=_apply_preset)
