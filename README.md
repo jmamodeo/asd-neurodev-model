@@ -55,6 +55,9 @@ pip install -e .[test]
 | Run the tests | `pytest` |
 | Check the code style | `pip install -e .[lint]`, then `ruff check . && ruff format --check .` |
 | Rebuild the paper PDF | `pip install -e .[paper]`, then `python docs/paper/build_paper.py` |
+| Run the interactive demo | `pip install -e .[demo]`, then `streamlit run app.py` |
+
+The demo shows the mechanism live (network diagram and release-map histogram that follow the Wnt and CCL5 sliders), the paper's results from `reproduce_data/`, and a button that trains the four conditions on a smaller illustration network (input size 100, 50 sessions). That live network is not the paper's 900-wide, 100-session, 20-seed runs; those results are shown from the shipped bundles. The live training uses the 24 CIFAR-10 images in `demo_images/` (Krizhevsky, A. (2009). Learning Multiple Layers of Features from Tiny Images).
 
 Command-line options are spelled out in full; abbreviations are rejected. `reproduce.py` and the figure scripts take the same options: `--quick`, `--retrain`, `--workers N`, `--seeds N`, `--sessions N`, `--original-images DIR` and `--no-fetch` (described [below](#reproducing-the-papers-figures-and-tables-reproducepy)).
 
@@ -93,7 +96,11 @@ src/asd_model/          The package
   experiment.py         One seeded run (condition, seed) used by reproduce.py
   paper_analysis.py     Statistics, tables and Figures 3-6, S1-S3
   model_figures.py      Figures 1 and 2 (model schematic, release-map distributions)
+  app.py                The demo page and its helpers, run by `streamlit run app.py`
 main.py, reproduce.py   The two commands you run (they start the package code above)
+app.py                  The command that starts the interactive demo
+demo_images/            The 24 CIFAR-10 images used by the demo's live training
+.streamlit/             Streamlit theme and settings for the demo
 scripts/figures/        One script per figure or table (fig1 ... fig6, figs1 ... figs3, tables)
 scripts/fetch_cifar10.py  Downloads CIFAR-10 and writes the image subset main.py expects
 reproduce_data/         The finished runs behind the paper (4 conditions x 20 seeds x 2 image sets)
