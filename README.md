@@ -59,6 +59,10 @@ pip install -e .[test]
 
 The demo shows the mechanism live (network diagram and release-map histogram that follow the Wnt and CCL5 sliders), the paper's results from `reproduce_data/`, and a button that trains the four conditions on a smaller illustration network (input size 100, 50 sessions). That live network is not the paper's 900-wide, 100-session, 20-seed runs; those results are shown from the shipped bundles. The live training uses the 24 CIFAR-10 images in `demo_images/` (Krizhevsky, A. (2009). Learning Multiple Layers of Features from Tiny Images).
 
+![Interactive Streamlit demo on the Control preset, showing a flat 100-unit hidden-layer network and a release-map histogram](figures/demo_control.png)
+
+*The interactive demo opens on Control (`wnt_delta = 0`, `ccl5_delta = 0`): every hidden layer stays the same width as the input. The network flares out only when Wnt is increased, because each hidden layer grows by `(1 + wnt_delta)` over the previous layer.*
+
 Command-line options are spelled out in full; abbreviations are rejected. `reproduce.py` and the figure scripts take the same options: `--quick`, `--retrain`, `--workers N`, `--seeds N`, `--sessions N`, `--original-images DIR` and `--no-fetch` (described [below](#reproducing-the-papers-figures-and-tables-reproducepy)).
 
 ## `main.py` or `reproduce.py`?
